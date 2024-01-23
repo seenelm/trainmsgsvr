@@ -1,0 +1,21 @@
+[package]
+name = "train-messaging-server"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+axum = "0.7"
+socketioxide = "0.10.0"
+tokio = { version = "1", features = ["full"] }
+hyper = { version = "1.1.0", features = ["full"] }
+tower-http = { version = "0.5.1", features = ["cors"] }
+tower = "0.4.13"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+serde = "1.0.195"
+serde_json = "1.0.111"
+chrono = { version = "0.4.31", features = ["serde"] }
+mongodb = "2.8.0"
+dotenv = "0.15.0"
