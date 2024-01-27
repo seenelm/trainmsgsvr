@@ -1,15 +1,22 @@
-mod database;
 mod models;
+
+use std::env;
+use dotenv::dotenv;
 
 use socketioxide::{
     extract::{Data, SocketRef}, 
     SocketIo
 };
-use axum::routing::get;
+use axum::{routing::get};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::FmtSubscriber;
+
+// use database::db;
+// use database::db::Chat;
+
+use train_messaging_server::{ChatDAO, BaseDAO, Chat};
 
 // Message received from the client
 #[derive(Debug, serde::Deserialize)]
@@ -28,6 +35,32 @@ struct MessageOut {
 
 async fn on_connect(socket: SocketRef) {
     info!("Socket connected: {}", socket.id);
+    let chat_dao = match ChatDAO::new().await {
+        Ok(dao) => dao,
+        Err(e) => {
+            println!("Failed to create ChatDAO: {}", e);
+            return;
+        }
+    };
+
+    socket.on("create-chat", move |socket: SocketRef, Data::<Chat>(data)| async move {
+        info!("Received create-chat: {:?}", data);
+        
+
+        if let Err(e) = chat_dao.create().await {
+            println!("Failed to create chat: {}", e);
+            return;
+        }
+
+        // let _ = chat_dao.insert_document(data).await;
+        if let Err(e) = chat_dao.insert_document(data).await {
+            println!("Failed to insert document: {}", e);
+            return;
+        }
+      
+        let _ = socket.emit("create-chat", "Successfully created chat");
+    });
+
 
      // join the socket to the room
      socket.on("join", |socket: SocketRef, Data::<String>(room)| {
@@ -55,7 +88,12 @@ async fn on_connect(socket: SocketRef) {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::subscriber::set_global_default(FmtSubscriber::default())?;
 
-    let (layer, io) = SocketIo::new_layer();
+    dotenv().ok();
+    let db_uri = env::var("DB_URI").expect("DB_URI must be set");
+    println!("DB_URI: {}", env::var("DB_URI").unwrap_or("Not set".to_string()));
+    let db = train_messaging_server::init(&db_uri).await?;
+
+    let (layer, io) = SocketIo::builder().with_state(db).build_layer();
 
     io.ns("/", on_connect);
 
@@ -71,7 +109,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     //     .serve(app.into_make_service())
     //     .await?;
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("192.168.1.59:3001").await.unwrap();
     axum::serve(listener, app).await.unwrap();
 
     info!("Server running on port 3000");
