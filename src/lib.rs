@@ -69,26 +69,4 @@ impl BaseDAO<Chat> for ChatDAO {
         }
         Ok(())
     }
-    // async fn create() -> Result<(), mongodb::error::Error> {
-    //     let db_uri = env::var("DB_URI").expect("DB_URI must be set");
-    //     let db = init(&db_uri).await?;
-    //     db.create_collection("chat", None).await?;
-    //     Ok(())
-    // }
-
-    // async fn insert_document(document: Chat) -> Result<(), mongodb::error::Error> {
-    //     let db_uri = env::var("DB_URI").expect("DB_URI must be set");
-    //     let db = init(&db_uri).await?;
-    //     let collection = db.collection("chat");
-
-    //     let filter = doc! { "group_id": &document.group_id };
-    //     let result = collection.find_one(filter, None).await?;
-    //     if result.is_some() {
-    //         println!("group_id already exists in the collection");
-    //     } else {
-    //         collection.insert_one(document, None).await?;
-    //     }
-
-    //     Ok(())
-    // }
 }

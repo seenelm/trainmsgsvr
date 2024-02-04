@@ -68,9 +68,6 @@ pub struct Server {
 
 impl Server {
     pub async fn new() -> Result<Self, mongodb::error::Error> {
-        // let chat_dao = ChatDAO::new().await?;
-        // let chat_controller = ChatController::new(chat_dao);
-        // Ok(Self { chat_controller })
         let chat_dao = ChatDAO::new().await?;
         let chat_handler = ChatHandler::new(chat_dao);
         let chat_controller = ChatController::new(chat_handler);

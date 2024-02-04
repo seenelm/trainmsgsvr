@@ -6,84 +6,14 @@ use std::env;
 use dotenv::dotenv;
 use std::sync::Arc;
 
-use socketioxide::{
-    extract::{Data, SocketRef}, 
-    SocketIo
-};
+use socketioxide::SocketIo;
 use axum::routing::get;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::FmtSubscriber;
 
-use train_messaging_server::{ChatDAO, BaseDAO, Chat};
 use socketio::server::Server;
-
-// Message received from the client
-#[derive(Debug, serde::Deserialize)]
-struct MessageIn {
-    room: String,
-    text: String,
-}
-
-// Message sent to the client
-#[derive(serde::Serialize)]
-struct MessageOut {
-    text: String,
-    user: String, // user who sent the message
-    date: chrono::DateTime<chrono::Utc>, // Timestamp for when the message was received
-}
-
-// async fn on_connect(socket: SocketRef) {
-//     info!("Socket connected: {}", socket.id);
-//     let chat_dao = match ChatDAO::new().await {
-//         Ok(dao) => dao,
-//         Err(e) => {
-//             println!("Failed to create ChatDAO: {}", e);
-//             return;
-//         }
-//     };
-
-//     socket.on("create-chat", move |socket: SocketRef, Data::<Chat>(data)| async move {
-//         info!("Received create-chat: {:?}", data);
-        
-
-//         if let Err(e) = chat_dao.create().await {
-//             println!("Failed to create chat: {}", e);
-//             return;
-//         }
-
-//         // let _ = chat_dao.insert_document(data).await;
-//         if let Err(e) = chat_dao.insert_document(data).await {
-//             println!("Failed to insert document: {}", e);
-//             return;
-//         }
-      
-//         let _ = socket.emit("create-chat", "Successfully created chat");
-//     });
-
-
-//      // join the socket to the room
-//      socket.on("join", |socket: SocketRef, Data::<String>(room)| {
-//         info!("Received join: {:?}", room);
-//         let _ = socket.leave_all(); // leave all rooms to ensure the socket is only in one room
-//         let _ = socket.join(room); // join the room
-//     });
-
-//     socket.on("message", |socket: SocketRef, Data::<MessageIn>(data)| {
-//         info!("Message received: {:?}", data);
-
-//         let response = MessageOut {
-//             text: data.text,
-//             user: format!("anon-{}", socket.id),
-//             date: chrono::Utc::now(),
-//         };
-
-//         // Send the message back to the room that it came from
-//         // Send the message to all sockets that joined that room
-//         let _ = socket.within(data.room).emit("message", response);
-//     });
-// }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -100,10 +30,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     io.ns("/", move |socket| async move {
         let server = Arc::clone(&server);
-
-        // tokio::spawn(async move {
-        //     server.on_connect(socket).await;
-        // });
         server.on_connect(socket).await;
     });
 
