@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use socketioxide::extract::{SocketRef, Data};
+use crate::controllers::ChatController;
+use crate::dao::{BaseDAO, Chat, ChatDAO};
+use socketioxide::extract::{Data, SocketRef};
 use tracing::info;
-use train_messaging_server::{ChatDAO, BaseDAO, Chat};
-use crate::controllers::chat_controller::ChatController;
 
 // Message received from the client
 #[derive(Debug, serde::Deserialize)]
@@ -16,7 +16,7 @@ pub struct MessageIn {
 #[derive(serde::Serialize)]
 pub struct MessageOut {
     text: String,
-    user: String, // user who sent the message
+    user: String,                        // user who sent the message
     date: chrono::DateTime<chrono::Utc>, // Timestamp for when the message was received
 }
 
@@ -77,6 +77,5 @@ impl Server {
     pub async fn on_connect(&self, socket: SocketRef) {
         info!("Socket connected: {}", socket.id);
         self.chat_controller.register_chat_handlers(socket).await;
-        
     }
 }
