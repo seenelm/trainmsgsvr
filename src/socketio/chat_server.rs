@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::controllers::ChatController;
-use crate::dao::{BaseDAO, Chat, ChatDAO};
+use crate::dao::{BaseDAO, Chat, ChatDAO, Message, MessageDAO};
 use socketioxide::extract::{Data, SocketRef};
 use tracing::info;
 
@@ -23,11 +23,15 @@ pub struct MessageOut {
 #[derive(Clone)]
 pub struct ChatHandler {
     chat_dao: ChatDAO,
+    message_dao: MessageDAO,
 }
 
 impl ChatHandler {
-    pub fn new(chat_dao: ChatDAO) -> Self {
-        Self { chat_dao }
+    pub fn new(chat_dao: ChatDAO, message_dao: MessageDAO) -> Self {
+        Self {
+            chat_dao,
+            message_dao,
+        }
     }
 
     pub async fn handle_create_chat(&self, socket: SocketRef, Data(data): Data<Chat>) {
@@ -51,10 +55,21 @@ impl ChatHandler {
         info!("Message received: {:?}", data);
 
         let response = MessageOut {
-            text: data.text,
+            text: data.text.clone(),
             user: format!("anon-{}", socket.id),
             date: chrono::Utc::now(),
         };
+
+        let message = Message {
+            id: None,
+            room: data.room.clone(),
+            message: data.text,
+        };
+
+        if let Err(e) = self.message_dao.insert_document(message).await {
+            println!("Failed to insert document: {}", e);
+            return;
+        }
 
         // Send the message back to the room that it came from
         // Send the message to all sockets that joined that room
@@ -69,7 +84,8 @@ pub struct Server {
 impl Server {
     pub async fn new() -> Result<Self, mongodb::error::Error> {
         let chat_dao = ChatDAO::new().await?;
-        let chat_handler = ChatHandler::new(chat_dao);
+        let message_dao = MessageDAO::new().await?;
+        let chat_handler = ChatHandler::new(chat_dao, message_dao);
         let chat_controller = ChatController::new(chat_handler);
         Ok(Self { chat_controller })
     }

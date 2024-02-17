@@ -10,8 +10,9 @@ use std::env;
 pub struct Message {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
-    pub chat_id: ObjectId,
-    pub sender_id: ObjectId,
+    pub room: String,
+    // pub chat_id: ObjectId,
+    // pub sender_id: ObjectId,
     pub message: String,
     // pub created_at: chrono::DateTime<chrono::Utc>,
     // pub updated_at: chrono::DateTime<chrono::Utc>,

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::dao::{Chat, ChatDAO};
+use crate::dao::Chat;
 use crate::socketio::{ChatHandler, MessageIn};
 
 use socketioxide::extract::{Data, SocketRef};
@@ -37,9 +37,9 @@ impl ChatController {
         let chat_handler = Arc::clone(&self.chat_handler);
         socket.on(
             "message",
-            move |socket: SocketRef, Data::<MessageIn>(data)| {
+            move |socket: SocketRef, Data::<MessageIn>(data)| async move {
                 let chat_handler = Arc::clone(&chat_handler);
-                chat_handler.handle_message(socket, Data(data));
+                chat_handler.handle_message(socket, Data(data)).await;
             },
         );
     }
