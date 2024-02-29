@@ -29,10 +29,14 @@ impl ChatController {
         );
 
         let chat_handler = Arc::clone(&self.chat_handler);
-        socket.on("join", move |socket: SocketRef, Data::<String>(room)| {
-            let chat_handler = Arc::clone(&chat_handler);
-            chat_handler.handle_join(socket, Data(room));
-        });
+
+        socket.on(
+            "join",
+            move |socket: SocketRef, Data::<String>(room)| async move {
+                let chat_handler = Arc::clone(&chat_handler);
+                chat_handler.handle_join(socket, Data(room)).await;
+            },
+        );
 
         let chat_handler = Arc::clone(&self.chat_handler);
         socket.on(

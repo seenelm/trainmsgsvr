@@ -13,7 +13,7 @@ pub struct MessageIn {
 }
 
 // Message sent to the client
-#[derive(serde::Serialize)]
+#[derive(Debug, serde::Serialize)]
 pub struct MessageOut {
     text: String,
     user: String,                        // user who sent the message
@@ -59,6 +59,7 @@ impl ChatHandler {
             user: format!("anon-{}", socket.id),
             date: chrono::Utc::now(),
         };
+        info!("Message response: {:?}", response);
 
         let message = Message {
             id: None,
@@ -73,7 +74,10 @@ impl ChatHandler {
 
         // Send the message back to the room that it came from
         // Send the message to all sockets that joined that room
-        let _ = socket.within(data.room).emit("message", response);
+        if let Err(e) = socket.within(data.room).emit("message", response) {
+            println!("Failed to send message: {}", e);
+            return;
+        }
     }
 }
 
