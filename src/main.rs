@@ -1,19 +1,21 @@
+mod controllers;
+mod dao;
+mod db_utils;
 mod models;
 mod socketio;
-mod controllers;
 
-use std::env;
 use dotenv::dotenv;
+use std::env;
 use std::sync::Arc;
 
-use socketioxide::SocketIo;
 use axum::routing::get;
+use socketioxide::SocketIo;
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::FmtSubscriber;
 
-use socketio::server::Server;
+use socketio::Server;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,7 +23,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     dotenv().ok();
     let db_uri = env::var("DB_URI").expect("DB_URI must be set");
-    println!("DB_URI: {}", env::var("DB_URI").unwrap_or("Not set".to_string()));
+    println!(
+        "DB_URI: {}",
+        env::var("DB_URI").unwrap_or("Not set".to_string())
+    );
     let db = train_messaging_server::init(&db_uri).await?;
 
     let (layer, io) = SocketIo::builder().with_state(db).build_layer();
@@ -38,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .layer(
             ServiceBuilder::new()
                 .layer(CorsLayer::permissive())
-                .layer(layer)
+                .layer(layer),
         );
 
     let test_uri = env::var("TEST_URI").expect("TEST_URI must be set");

@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use mongodb::bson::oid::ObjectId;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Session {
