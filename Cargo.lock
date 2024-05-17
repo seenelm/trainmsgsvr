@@ -1919,6 +1919,7 @@ dependencies = [
  "axum",
  "chrono",
  "dotenv",
+ "futures",
  "hyper",
  "mongodb",
  "serde",
