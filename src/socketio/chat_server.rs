@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::controllers::ChatController;
 use crate::dao::{BaseDAO, Chat, ChatDAO, Message, MessageDAO};
 use socketioxide::extract::{Data, SocketRef};
+use socketioxide::handler::message;
 use tracing::info;
 
 // Message received from the client
@@ -48,7 +49,8 @@ impl ChatHandler {
     pub async fn handle_join(&self, socket: SocketRef, Data(room): Data<String>) {
         info!("Received join: {:?}", room);
         let _ = socket.leave_all(); // leave all rooms to ensure the socket is only in one room
-        let _ = socket.join(room); // join the room
+        let _ = socket.join(room.clone()); // join the room
+                                           // let _ = self.message_dao.find_messages_by_room(&room).await;
     }
 
     pub async fn handle_message(&self, socket: SocketRef, Data(data): Data<MessageIn>) {

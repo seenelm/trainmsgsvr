@@ -1,7 +1,9 @@
 use super::base_dao::BaseDAO;
 use crate::db_utils::init;
 use async_trait::async_trait;
+use futures::stream::StreamExt;
 use mongodb::bson::oid::ObjectId;
+use mongodb::bson::{doc, from_document, Document};
 use mongodb::{Collection, Database};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -31,8 +33,28 @@ impl MessageDAO {
         let collection = db.collection("message");
         Ok(Self { collection, db })
     }
-}
 
+    // pub async fn find_messages_by_room(
+    //     &self,
+    //     room: &str,
+    // ) -> Result<Vec<Message>, mongodb::error::Error> {
+    //     let filter = doc! { "room": room };
+    //     let mut cursor = self.collection.find(filter, None).await?;
+
+    //     let mut messages = Vec::new();
+    //     while let Some(result) = cursor.next().await {
+    //         match result {
+    //             Ok(document) => {
+    //                 let message: Message = from_document(document)?;
+    //                 messages.push(message);
+    //             }
+    //             Err(e) => return Err(e.into()),
+    //         }
+    //     }
+
+    //     Ok(messages)
+    // }
+}
 #[async_trait]
 impl BaseDAO<Message> for MessageDAO {
     async fn create(&self) -> Result<(), mongodb::error::Error> {
