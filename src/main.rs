@@ -1,5 +1,6 @@
 mod controllers;
 mod dao;
+mod data;
 mod db_utils;
 mod models;
 mod socketio;
@@ -27,7 +28,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "DB_URI: {}",
         env::var("DB_URI").unwrap_or("Not set".to_string())
     );
-    let db = train_messaging_server::init(&db_uri).await?;
+    // let db = train_messaging_server::init(&db_uri).await?;
+    let db_client = match data::DB::new(&db_uri).await {
+        Ok(client) => client,
+        Err(e) => {
+            // Add logging
+            panic!("{:?}", e)
+        }
+    };
+
+    let db = db_client.get_database("test");
 
     let (layer, io) = SocketIo::builder().with_state(db).build_layer();
 
