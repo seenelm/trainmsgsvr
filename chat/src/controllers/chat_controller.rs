@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use crate::dao::Chat;
 use crate::socketio::{ChatHandler, MessageIn};
+use database::dao::Chat;
 
 use socketioxide::extract::{Data, SocketRef};
 pub struct ChatController {

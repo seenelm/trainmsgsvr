@@ -1,16 +1,7 @@
-// use mongodb::error::Result;
-use mongodb::{options::ClientOptions, Client, Database};
-use serde_json::error;
+use mongodb::{options::ClientOptions, Client};
 use thiserror::Error;
 
-// pub async fn init(db_uri: &str) -> Result<Database> {
-//     let mut client_options = ClientOptions::parse(&db_uri).await?;
-//     client_options.app_name = Some("Train".to_string());
-//     let client = Client::with_options(client_options)?;
-//     let db = client.database("test");
-
-//     Ok(db)
-// }
+pub mod dao;
 
 #[derive(Debug, Error)]
 pub enum DataError {
