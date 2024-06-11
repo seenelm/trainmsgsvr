@@ -1,14 +1,12 @@
 [package]
-name = "chat"
+name = "chat-api"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-socketioxide = { version = "0.10.0", features = ["state"] }
-tracing = "0.1"
-tracing-subscriber = "0.3"
+# serde 
 serde = "1.0.195"
 serde_json = "1.0.111"
 chrono = { version = "0.4.31", features = ["serde"] }

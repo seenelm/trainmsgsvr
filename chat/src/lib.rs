@@ -1,5 +1,5 @@
 pub mod controllers;
-pub mod models;
+pub mod handlers;
 pub mod socketio;
 
 // Re-export modules

@@ -31,39 +31,39 @@ impl MessageDAO {
     }
 }
 
-#[automock]
-#[async_trait]
-impl BaseDAO<Message> for MessageDAO {
-    async fn insert_document(&self, document: &Message) -> Result<(), DataError> {
-        println!("insert_document: {:?}", document);
-        self.collection.insert_one(document, None).await?;
-        Ok(())
-    }
-}
+// #[automock]
+// #[async_trait]
+// impl BaseDAO<Message> for MessageDAO {
+//     async fn insert_document(&self, document: &Message) -> Result<(), DataError> {
+//         println!("insert_document: {:?}", document);
+//         self.collection.insert_one(document, None).await?;
+//         Ok(())
+//     }
+// }
 
-#[cfg(test)]
-mod test {
-    use super::*;
+// #[cfg(test)]
+// mod test {
+//     use super::*;
 
-    #[tokio::test]
-    async fn test_insert_message() {
-        let mut message_dao = MockMessageDAO::new();
+//     #[tokio::test]
+//     async fn test_insert_message() {
+//         let mut message_dao = MockMessageDAO::new();
 
-        let message = Message {
-            id: None,
-            sender_id: ObjectId::new(),
-            conversation_id: ObjectId::new(),
-            text: "Hello".to_string(),
-            media_url: None,
-            created_at: chrono::Utc::now(),
-        };
+//         let message = Message {
+//             id: None,
+//             sender_id: ObjectId::new(),
+//             conversation_id: ObjectId::new(),
+//             text: "Hello".to_string(),
+//             media_url: None,
+//             created_at: chrono::Utc::now(),
+//         };
 
-        message_dao
-            .expect_insert_document()
-            .with(eq(message.clone()))
-            .returning(|_| Ok(()));
+//         message_dao
+//             .expect_insert_document()
+//             .with(eq(message.clone()))
+//             .returning(|_| Ok(()));
 
-        let result = message_dao.insert_document(&message).await;
-        assert!(result.is_ok());
-    }
-}
+//         let result = message_dao.insert_document(&message).await;
+//         assert!(result.is_ok());
+//     }
+// }

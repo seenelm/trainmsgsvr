@@ -7,6 +7,8 @@ pub mod dao;
 pub enum DataError {
     #[error("Database error: {0}")]
     Database(#[from] mongodb::error::Error),
+    #[error("Insert failed")]
+    InsertFailed,
 }
 
 pub struct DB {

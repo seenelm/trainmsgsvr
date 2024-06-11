@@ -13,7 +13,7 @@ use mockall::{automock, predicate::*};
 pub struct Conversation {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
-    pub name: String,
+    pub name: Option<String>,
     pub owner_id: ObjectId,
     pub members: Vec<ObjectId>,
     pub created_at: chrono::DateTime<chrono::Utc>,
@@ -34,10 +34,16 @@ impl ConversationDAO {
 #[automock]
 #[async_trait]
 impl BaseDAO<Conversation> for ConversationDAO {
-    async fn insert_document(&self, document: &Conversation) -> Result<(), DataError> {
+    async fn insert_document(&self, document: &Conversation) -> Result<ObjectId, DataError> {
         println!("insert_document: {:?}", document);
-        self.collection.insert_one(document, None).await?;
-        Ok(())
+        let result = self.collection.insert_one(document, None).await;
+        match result {
+            Ok(insert_result) => match insert_result.inserted_id.as_object_id() {
+                Some(inserted_id) => Ok(inserted_id),
+                None => Err(DataError::InsertFailed),
+            },
+            Err(e) => Err(DataError::Database(e)),
+        }
     }
 }
 
@@ -48,10 +54,11 @@ mod test {
     #[tokio::test]
     async fn test_insert_conversation() {
         let mut conversation_dao = MockConversationDAO::new();
+        let mock_id = ObjectId::new();
 
         let conversation = Conversation {
             id: None,
-            name: "Test Conversation".to_string(),
+            name: Some("Test Conversation".to_string()),
             owner_id: ObjectId::new(),
             members: vec![ObjectId::new(), ObjectId::new()],
             created_at: chrono::Utc::now(),
@@ -61,9 +68,10 @@ mod test {
         conversation_dao
             .expect_insert_document()
             .with(eq(conversation.clone()))
-            .returning(|_| Ok(()));
+            .returning(move |_| Ok(mock_id.clone()));
 
         let result = conversation_dao.insert_document(&conversation).await;
         assert!(result.is_ok());
+        assert_eq!(result.unwrap(), mock_id);
     }
 }

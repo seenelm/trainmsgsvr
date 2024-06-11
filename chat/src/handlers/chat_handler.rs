@@ -1,21 +1,25 @@
-use std::sync::Arc;
-
-use crate::controllers::ChatController;
-use crate::dao::{BaseDAO, Chat, ChatDAO, Message, MessageDAO};
+use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
-use socketioxide::extract::{Data, SocketRef};
-use socketioxide::handler::message;
+use socketioxide::extract::{Data, SocketRef, TryData};
+use std::sync::Arc;
 use tracing::info;
+
+use database::dao::conversation_dao::{Conversation, ConversationDAO};
+use database::dao::message_dao::MessageDAO;
+use database::dao::BaseDAO;
 
 // Message received from the client
 #[derive(Debug, Deserialize)]
-pub struct MessageIn {
-    room: String,
-    text: String,
+pub struct Message {
+    pub sender_id: ObjectId,
+    pub conversation_id: ObjectId,
+    pub text: String,
+    pub media_url: Option<String>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 // Message sent to the client
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, Serialize)]
 pub struct MessageOut {
     text: String,
     user: String,                        // user who sent the message
@@ -23,28 +27,37 @@ pub struct MessageOut {
 }
 
 #[derive(Clone)]
-pub struct ChatHandler {
-    chat_dao: ChatDAO,
-    message_dao: MessageDAO,
+pub struct ChatHandler<'a> {
+    conversation_dao: &'a ConversationDAO,
+    message_dao: &'a MessageDAO,
+    socket: &'a SocketRef,
 }
 
-impl ChatHandler {
-    pub fn new(chat_dao: ChatDAO, message_dao: MessageDAO) -> Self {
+impl<'a> ChatHandler<'a> {
+    pub fn new(
+        conversation_dao: &'a ConversationDAO,
+        message_dao: &'a MessageDAO,
+        socket: &'a SocketRef,
+    ) -> Self {
         Self {
-            chat_dao,
+            conversation_dao,
             message_dao,
+            socket,
         }
     }
 
-    pub async fn handle_create_chat(&self, socket: SocketRef, Data(data): Data<Chat>) {
+    pub async fn handle_create_chat(&self, Data(data): Data<Conversation>) {
         info!("Received create-chat: {:?}", data);
 
-        if let Err(e) = self.chat_dao.insert_document(data).await {
+        if let Err(e) = self.conversation_dao.insert_document(&data).await {
             println!("Failed to insert document: {}", e);
             return;
         }
 
-        let _ = socket.emit("create-chat", "Successfully created chat");
+        match self.socket.emit("create-chat", "Successfully created chat") {
+            Ok(_) => info!("Successfully sent create-chat response"),
+            Err(e) => println!("Failed to send create-chat response: {}", e),
+        };
     }
 
     pub async fn handle_join(&self, socket: SocketRef, Data(room): Data<String>) {
@@ -54,7 +67,7 @@ impl ChatHandler {
                                            // let _ = self.message_dao.find_messages_by_room(&room).await;
     }
 
-    pub async fn handle_message(&self, socket: SocketRef, Data(data): Data<MessageIn>) {
+    pub async fn handle_message(&self, Data(data): Data<Message>) {
         info!("Message received: {:?}", data);
 
         let response = MessageOut {
@@ -81,24 +94,5 @@ impl ChatHandler {
             println!("Failed to send message: {}", e);
             return;
         }
-    }
-}
-
-pub struct Server {
-    chat_controller: ChatController,
-}
-
-impl Server {
-    pub async fn new() -> Result<Self, mongodb::error::Error> {
-        let chat_dao = ChatDAO::new().await?;
-        let message_dao = MessageDAO::new().await?;
-        let chat_handler = ChatHandler::new(chat_dao, message_dao);
-        let chat_controller = ChatController::new(chat_handler);
-        Ok(Self { chat_controller })
-    }
-
-    pub async fn on_connect(&self, socket: SocketRef) {
-        info!("Socket connected: {}", socket.id);
-        self.chat_controller.register_chat_handlers(socket).await;
     }
 }
