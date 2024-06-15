@@ -11,13 +11,36 @@ use mockall::{automock, predicate::*};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Conversation {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
+    pub _id: ObjectId,
     pub name: Option<String>,
     pub owner_id: ObjectId,
     pub members: Vec<ObjectId>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ConversationRequest {
+    pub name: Option<String>,
+    pub owner_id: ObjectId,
+    pub members: Vec<ObjectId>,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+// Convert from ConversationRequest to Conversation
+impl TryFrom<ConversationRequest> for Conversation {
+    type Error = DataError;
+
+    fn try_from(value: ConversationRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            _id: ObjectId::new(),
+            name: value.name,
+            owner_id: value.owner_id,
+            members: value.members,
+            created_at: value.created_at,
+            updated_at: None,
+        })
+    }
 }
 
 pub struct ConversationDAO {
@@ -57,7 +80,7 @@ mod test {
         let mock_id = ObjectId::new();
 
         let conversation = Conversation {
-            id: None,
+            _id: ObjectId::new(),
             name: Some("Test Conversation".to_string()),
             owner_id: ObjectId::new(),
             members: vec![ObjectId::new(), ObjectId::new()],

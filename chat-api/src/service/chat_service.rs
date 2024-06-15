@@ -1,7 +1,7 @@
-use crate::model::ConversationResponse;
 use database::dao::conversation_dao::{Conversation, ConversationDAO};
 use database::dao::BaseDAO;
 use database::DataError;
+use mongodb::bson::oid::ObjectId;
 
 pub struct ChatService {
     conversation_dao: ConversationDAO,
@@ -12,8 +12,8 @@ impl ChatService {
         Self { conversation_dao }
     }
 
-    pub async fn create_chat(&self, data: Conversation) -> Result<Conversation, DataError> {
-        self.conversation_dao.insert_document(&data).await?;
-        Ok(data)
+    pub async fn insert_one(&self, data: Conversation) -> Result<ObjectId, DataError> {
+        let id = self.conversation_dao.insert_document(&data).await?;
+        Ok(id)
     }
 }
