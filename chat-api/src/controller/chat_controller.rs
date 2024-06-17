@@ -2,13 +2,14 @@ use crate::error::ApiResult;
 use crate::model::chat_model::{ConversationRequest, ConversationResponse};
 use crate::service::chat_service::ChatService;
 use axum::{http::StatusCode, response::Json};
+use database::dao::conversation_dao::ConversationDAO;
 
 pub struct ChatController {
-    chat_service: ChatService,
+    chat_service: ChatService<ConversationDAO>,
 }
 
 impl ChatController {
-    pub fn new(chat_service: ChatService) -> Self {
+    pub fn new(chat_service: ChatService<ConversationDAO>) -> Self {
         Self { chat_service }
     }
 

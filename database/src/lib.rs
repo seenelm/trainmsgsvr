@@ -1,4 +1,4 @@
-use mongodb::{error, options::ClientOptions, Client};
+use mongodb::{options::ClientOptions, Client};
 use thiserror::Error;
 
 pub mod dao;
