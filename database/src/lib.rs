@@ -1,4 +1,4 @@
-use mongodb::{options::ClientOptions, Client};
+use mongodb::{error, options::ClientOptions, Client};
 use thiserror::Error;
 
 pub mod dao;
@@ -7,8 +7,10 @@ pub mod dao;
 pub enum DataError {
     #[error("Database error: {0}")]
     Database(#[from] mongodb::error::Error),
-    #[error("Insert failed")]
-    InsertFailed,
+    #[error("Query error: {0}")]
+    QueryError(mongodb::error::Error),
+    #[error("Insert error: {0}")]
+    InsertError(String),
 }
 
 pub struct DB {

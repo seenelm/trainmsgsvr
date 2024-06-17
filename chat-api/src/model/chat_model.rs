@@ -1,8 +1,8 @@
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
+use crate::error::ApiError;
 use database::dao::conversation_dao::Conversation;
-use database::DataError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConversationRequest {
@@ -22,15 +22,15 @@ pub struct ConversationResponse {
 }
 
 // Convert from ConversationRequest to Conversation
-impl TryFrom<ConversationRequest> for Conversation {
-    type Error = DataError;
+impl TryFrom<&ConversationRequest> for Conversation {
+    type Error = ApiError;
 
-    fn try_from(value: ConversationRequest) -> Result<Self, Self::Error> {
+    fn try_from(value: &ConversationRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             _id: ObjectId::new(),
-            name: value.name,
+            name: value.name.to_owned(),
             owner_id: value.owner_id,
-            members: value.members,
+            members: value.members.to_owned(),
             created_at: value.created_at,
             updated_at: None,
         })

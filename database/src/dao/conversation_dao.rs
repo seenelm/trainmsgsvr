@@ -19,30 +19,6 @@ pub struct Conversation {
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ConversationRequest {
-    pub name: Option<String>,
-    pub owner_id: ObjectId,
-    pub members: Vec<ObjectId>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-}
-
-// Convert from ConversationRequest to Conversation
-impl TryFrom<ConversationRequest> for Conversation {
-    type Error = DataError;
-
-    fn try_from(value: ConversationRequest) -> Result<Self, Self::Error> {
-        Ok(Self {
-            _id: ObjectId::new(),
-            name: value.name,
-            owner_id: value.owner_id,
-            members: value.members,
-            created_at: value.created_at,
-            updated_at: None,
-        })
-    }
-}
-
 pub struct ConversationDAO {
     pub collection: Collection<Conversation>,
 }
@@ -63,9 +39,11 @@ impl BaseDAO<Conversation> for ConversationDAO {
         match result {
             Ok(insert_result) => match insert_result.inserted_id.as_object_id() {
                 Some(inserted_id) => Ok(inserted_id),
-                None => Err(DataError::InsertFailed),
+                None => Err(DataError::InsertError(
+                    "Insert ID is not an ObjectId".to_string(),
+                )),
             },
-            Err(e) => Err(DataError::Database(e)),
+            Err(e) => Err(DataError::QueryError(e)),
         }
     }
 }
