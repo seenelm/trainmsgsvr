@@ -4,31 +4,32 @@ use socketioxide::extract::{Data, SocketRef, TryData};
 use std::sync::Arc;
 use tracing::info;
 
-use database::dao::conversation_dao::{Conversation, ConversationDAO};
+use database::dao::conversation_dao::ConversationDAO;
 use database::dao::message_dao::MessageDAO;
-use database::dao::BaseDAO;
 
 use crate::error::ChatError;
-use crate::model::chat_model::{ConversationRequest, ConversationResponse};
+use crate::model::chat_model::{
+    ConversationRequest, CreateConversation, CreateConversationResponse, MessageRequest,
+};
 use crate::service::chat_service::ChatService;
 
 // Message received from the client
-#[derive(Debug, Deserialize)]
-pub struct Message {
-    pub sender_id: ObjectId,
-    pub conversation_id: ObjectId,
-    pub text: String,
-    pub media_url: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-}
+// #[derive(Debug, Deserialize)]
+// pub struct Message {
+//     pub sender_id: ObjectId,
+//     pub conversation_id: ObjectId,
+//     pub text: String,
+//     pub media_url: Option<String>,
+//     pub created_at: chrono::DateTime<chrono::Utc>,
+// }
 
 // Message sent to the client
-#[derive(Debug, Serialize)]
-pub struct MessageOut {
-    text: String,
-    user: String,                        // user who sent the message
-    date: chrono::DateTime<chrono::Utc>, // Timestamp for when the message was received
-}
+// #[derive(Debug, Serialize)]
+// pub struct MessageOut {
+//     text: String,
+//     user: String,                        // user who sent the message
+//     date: chrono::DateTime<chrono::Utc>, // Timestamp for when the message was received
+// }
 
 #[derive(Clone)]
 pub struct ChatHandler<'a> {
@@ -50,9 +51,14 @@ impl<'a> ChatHandler<'a> {
         }
     }
 
-    pub async fn handle_create_chat(&self, Data(data): Data<ConversationRequest>) {
+    pub async fn handle_create_chat(&self, Data(data): Data<CreateConversation>) {
         info!("Received create-chat: {:?}", data);
-        let conversation_response = match self.chat_service.create_chat(data).await {
+        // Insert new conversation into database
+        let conversation_response = match self
+            .chat_service
+            .create_chat(data.conversation_request)
+            .await
+        {
             Ok(conversation) => conversation,
             Err(e) => {
                 println!("Failed to create chat: {}", e);
@@ -60,45 +66,69 @@ impl<'a> ChatHandler<'a> {
             }
         };
 
-        match self.socket.emit("create-chat", conversation_response) {
+        let message_request = MessageRequest {
+            sender_id: data.message_request.sender_id,
+            conversation_id: conversation_response.id,
+            text: data.message_request.text,
+            created_at: data.message_request.created_at,
+        };
+
+        // Insert new message into database
+        let message_response = match self.chat_service.insert_message(message_request).await {
+            Ok(message) => message,
+            Err(e) => {
+                println!("Failed to insert message: {}", e);
+                return;
+            }
+        };
+
+        let create_conversation_response = CreateConversationResponse {
+            conversation_response,
+            message_response,
+        };
+
+        match self
+            .socket
+            .emit("create-chat", create_conversation_response)
+        {
             Ok(_) => info!("Successfully sent create-chat response"),
             Err(e) => println!("Failed to send create-chat response: {}", e),
         };
     }
 
-    pub async fn handle_join(&self, socket: SocketRef, Data(room): Data<String>) {
-        info!("Received join: {:?}", room);
-        let _ = socket.leave_all(); // leave all rooms to ensure the socket is only in one room
-        let _ = socket.join(room.clone()); // join the room
-                                           // let _ = self.message_dao.find_messages_by_room(&room).await;
-    }
+    // pub async fn handle_join(&self, socket: SocketRef, Data(room): Data<String>) {
+    //     info!("Received join: {:?}", room);
+    //     let _ = socket.leave_all(); // leave all rooms to ensure the socket is only in one room
+    //     let _ = socket.join(room.clone()); // join the room
+    //                                        // let _ = self.message_dao.find_messages_by_room(&room).await;
+    // }
 
-    pub async fn handle_message(&self, Data(data): Data<Message>) {
-        info!("Message received: {:?}", data);
+    // pub async fn handle_message(&self, Data(data): Data<Message>) {
+    //     info!("Message received: {:?}", data);
 
-        let response = MessageOut {
-            text: data.text.clone(),
-            user: format!("anon-{}", socket.id),
-            date: chrono::Utc::now(),
-        };
-        info!("Message response: {:?}", response);
+    //     let response = MessageOut {
+    //         text: data.text.clone(),
+    //         user: format!("anon-{}", socket.id),
+    //         date: chrono::Utc::now(),
+    //     };
+    //     info!("Message response: {:?}", response);
 
-        let message = Message {
-            id: None,
-            room: data.room.clone(),
-            message: data.text,
-        };
+    //     let message = Message {
+    //         id: None,
+    //         room: data.room.clone(),
+    //         message: data.text,
+    //     };
 
-        if let Err(e) = self.message_dao.insert_document(message).await {
-            println!("Failed to insert document: {}", e);
-            return;
-        }
+    //     if let Err(e) = self.message_dao.insert_document(message).await {
+    //         println!("Failed to insert document: {}", e);
+    //         return;
+    //     }
 
-        // Send the message back to the room that it came from
-        // Send the message to all sockets that joined that room
-        if let Err(e) = socket.within(data.room).emit("message", response) {
-            println!("Failed to send message: {}", e);
-            return;
-        }
-    }
+    //     // Send the message back to the room that it came from
+    //     // Send the message to all sockets that joined that room
+    //     if let Err(e) = socket.within(data.room).emit("message", response) {
+    //         println!("Failed to send message: {}", e);
+    //         return;
+    //     }
+    // }
 }

@@ -1,24 +1,29 @@
 use crate::error::{ApiResult, ChatError};
-use crate::model::chat_model::{ConversationRequest, ConversationResponse};
+use crate::model::chat_model::{
+    ConversationRequest, ConversationResponse, MessageRequest, MessageResponse,
+};
 use database::dao::conversation_dao::Conversation;
+use database::dao::message_dao::{Message, MessageDAO};
 use database::dao::BaseDAO;
 use mongodb::bson::oid::ObjectId;
-
-// use mockall::{automock, predicate::*};
 
 pub struct ChatService<D>
 where
     D: BaseDAO<Conversation> + Send + Sync,
 {
     conversation_dao: D,
+    message_dao: MessageDAO,
 }
 
 impl<D> ChatService<D>
 where
     D: BaseDAO<Conversation> + Send + Sync,
 {
-    pub fn new(conversation_dao: D) -> Self {
-        Self { conversation_dao }
+    pub fn new(conversation_dao: D, message_dao: MessageDAO) -> Self {
+        Self {
+            conversation_dao,
+            message_dao,
+        }
     }
 
     pub async fn create_chat(&self, data: ConversationRequest) -> ApiResult<ConversationResponse> {
@@ -41,6 +46,25 @@ where
             members: conversation.members,
             created_at: conversation.created_at,
         })
+    }
+
+    pub async fn insert_message(
+        &self,
+        message_request: MessageRequest,
+    ) -> ApiResult<MessageResponse> {
+        let message = match Message::try_from(message_request) {
+            Ok(message) => message,
+            Err(e) => {
+                return Err(ChatError::BadRequest(format!(
+                    "Failed to convert MessageRequest to Message: {}",
+                    e
+                )));
+            }
+        };
+
+        self.message_dao.insert_document(&message).await?;
+
+        Ok(MessageResponse { text: message.text })
     }
 }
 

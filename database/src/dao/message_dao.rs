@@ -1,7 +1,5 @@
 use crate::DataError;
 
-use super::base_dao::BaseDAO;
-use async_trait::async_trait;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::{Collection, Database};
@@ -11,12 +9,12 @@ use mockall::{automock, predicate::*};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Message {
-    #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
-    pub id: Option<ObjectId>,
+    #[serde(rename = "_id")]
+    pub id: ObjectId,
     pub sender_id: ObjectId,
     pub conversation_id: ObjectId,
     pub text: String,
-    pub media_url: Option<String>,
+    // pub media_url: Option<String>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -28,6 +26,12 @@ impl MessageDAO {
     pub fn new(db: &Database) -> Result<Self, DataError> {
         let collection = db.collection("message");
         Ok(Self { collection })
+    }
+
+    pub async fn insert_document(&self, document: &Message) -> Result<(), DataError> {
+        println!("insert_document: {:?}", document);
+        self.collection.insert_one(document, None).await?;
+        Ok(())
     }
 }
 

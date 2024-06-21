@@ -1,8 +1,21 @@
 use crate::error::ChatError;
 use database::dao::conversation_dao::Conversation;
+use database::dao::message_dao::Message;
 
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateConversation {
+    pub conversation_request: ConversationRequest,
+    pub message_request: MessageRequest,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CreateConversationResponse {
+    pub conversation_response: ConversationResponse,
+    pub message_response: MessageResponse,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
@@ -53,6 +66,33 @@ impl TryFrom<ConversationRequest> for Conversation {
             members: member_ids,
             created_at: req.created_at,
             updated_at: None,
+        })
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MessageRequest {
+    pub sender_id: ObjectId,
+    pub conversation_id: ObjectId,
+    pub text: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MessageResponse {
+    pub text: String,
+}
+
+impl TryFrom<MessageRequest> for Message {
+    type Error = ChatError;
+
+    fn try_from(req: MessageRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: ObjectId::new(),
+            sender_id: req.sender_id,
+            conversation_id: req.conversation_id,
+            text: req.text,
+            created_at: req.created_at,
         })
     }
 }
