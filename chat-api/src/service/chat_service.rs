@@ -2,6 +2,7 @@ use crate::error::{ApiError, ApiResult};
 use crate::model::chat_model::{ConversationRequest, ConversationResponse};
 use database::dao::conversation_dao::Conversation;
 use database::dao::BaseDAO;
+use mongodb::bson::oid::ObjectId;
 
 // use mockall::{automock, predicate::*};
 
@@ -70,5 +71,30 @@ mod tests {
         let conversation = result.unwrap();
         assert_eq!(conversation.id, expected_conversation_id);
         assert_eq!(conversation.name, "Test Conversation");
+        assert_eq!(conversation.owner_id, conversation_request.owner_id);
+        assert_eq!(conversation.members, conversation_request.members);
+        assert_eq!(conversation.created_at, conversation_request.created_at);
     }
+
+    // #[tokio::test]
+    // async fn test_insert_one_bad_request_error() {
+    //     // Arrange
+    //     let mut mock_conversation_dao = MockConversationDAO::new();
+
+    //     let conversation_request = ConversationRequest {
+    //         name: None,
+    //         owner_id: ObjectId::new(),
+    //         members: vec![ObjectId::new(), ObjectId::new()],
+    //         created_at: chrono::Utc::now(),
+    //     };
+
+    //     let chat_service = ChatService::new(mock_conversation_dao);
+
+    //     // Act
+    //     let result = chat_service.insert_one(&conversation_request).await;
+
+    //     // Assert
+    //     assert!(result.is_err());
+    //     let err = result.unwrap_err();
+    // }
 }

@@ -8,6 +8,10 @@ use database::dao::conversation_dao::{Conversation, ConversationDAO};
 use database::dao::message_dao::MessageDAO;
 use database::dao::BaseDAO;
 
+use crate::error::ChatError;
+use crate::model::chat_model::{ConversationRequest, ConversationResponse};
+use crate::service::chat_service::ChatService;
+
 // Message received from the client
 #[derive(Debug, Deserialize)]
 pub struct Message {
@@ -28,33 +32,35 @@ pub struct MessageOut {
 
 #[derive(Clone)]
 pub struct ChatHandler<'a> {
-    conversation_dao: &'a ConversationDAO,
+    chat_service: &'a ChatService<ConversationDAO>,
     message_dao: &'a MessageDAO,
     socket: &'a SocketRef,
 }
 
 impl<'a> ChatHandler<'a> {
     pub fn new(
-        conversation_dao: &'a ConversationDAO,
+        chat_service: &'a ChatService<ConversationDAO>,
         message_dao: &'a MessageDAO,
         socket: &'a SocketRef,
     ) -> Self {
         Self {
-            conversation_dao,
+            chat_service,
             message_dao,
             socket,
         }
     }
 
-    pub async fn handle_create_chat(&self, Data(data): Data<Conversation>) {
+    pub async fn handle_create_chat(&self, Data(data): Data<ConversationRequest>) {
         info!("Received create-chat: {:?}", data);
+        let conversation_response = match self.chat_service.create_chat(data).await {
+            Ok(conversation) => conversation,
+            Err(e) => {
+                println!("Failed to create chat: {}", e);
+                return;
+            }
+        };
 
-        if let Err(e) = self.conversation_dao.insert_document(&data).await {
-            println!("Failed to insert document: {}", e);
-            return;
-        }
-
-        match self.socket.emit("create-chat", "Successfully created chat") {
+        match self.socket.emit("create-chat", conversation_response) {
             Ok(_) => info!("Successfully sent create-chat response"),
             Err(e) => println!("Failed to send create-chat response: {}", e),
         };
