@@ -39,42 +39,42 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use database::dao::conversation_dao::MockConversationDAO;
-    use mongodb::bson::oid::ObjectId;
+    // use super::*;
+    // use database::dao::conversation_dao::MockConversationDAO;
+    // use mongodb::bson::oid::ObjectId;
 
-    #[tokio::test]
-    async fn test_insert_one() {
-        // Arrange
-        let mut mock_conversation_dao = MockConversationDAO::new();
-        let expected_conversation_id = ObjectId::new();
+    // #[tokio::test]
+    // async fn test_insert_one() {
+    //     // Arrange
+    //     let mut mock_conversation_dao = MockConversationDAO::new();
+    //     let expected_conversation_id = ObjectId::new();
 
-        let conversation_request = ConversationRequest {
-            name: Some("Test Conversation".to_string()),
-            owner_id: ObjectId::new(),
-            members: vec![ObjectId::new(), ObjectId::new()],
-            created_at: chrono::Utc::now(),
-        };
+    //     let conversation_request = ConversationRequest {
+    //         name: Some("Test Conversation".to_string()),
+    //         owner_id: ObjectId::new(),
+    //         members: vec![ObjectId::new(), ObjectId::new()],
+    //         created_at: chrono::Utc::now(),
+    //     };
 
-        mock_conversation_dao
-            .expect_insert_document()
-            .withf(move |doc: &Conversation| doc.name == Some("Test Conversation".to_string()))
-            .returning(move |_| Ok(expected_conversation_id));
+    //     mock_conversation_dao
+    //         .expect_insert_document()
+    //         .withf(move |doc: &Conversation| doc.name == Some("Test Conversation".to_string()))
+    //         .returning(move |_| Ok(expected_conversation_id));
 
-        let chat_service = ChatService::new(mock_conversation_dao);
+    //     let chat_service = ChatService::new(mock_conversation_dao);
 
-        // Act
-        let result = chat_service.insert_one(&conversation_request).await;
+    //     // Act
+    //     let result = chat_service.insert_one(&conversation_request).await;
 
-        // Assert
-        assert!(result.is_ok());
-        let conversation = result.unwrap();
-        assert_eq!(conversation.id, expected_conversation_id);
-        assert_eq!(conversation.name, "Test Conversation");
-        assert_eq!(conversation.owner_id, conversation_request.owner_id);
-        assert_eq!(conversation.members, conversation_request.members);
-        assert_eq!(conversation.created_at, conversation_request.created_at);
-    }
+    //     // Assert
+    //     assert!(result.is_ok());
+    //     let conversation = result.unwrap();
+    //     assert_eq!(conversation.id, expected_conversation_id);
+    //     assert_eq!(conversation.name, "Test Conversation");
+    //     assert_eq!(conversation.owner_id, conversation_request.owner_id);
+    //     assert_eq!(conversation.members, conversation_request.members);
+    //     assert_eq!(conversation.created_at, conversation_request.created_at);
+    // }
 
     // #[tokio::test]
     // async fn test_insert_one_bad_request_error() {

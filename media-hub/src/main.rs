@@ -1,15 +1,23 @@
+use chat::model::chat_model::CreateConversation;
 use dotenv::dotenv;
 use std::env;
 use std::sync::Arc;
 
 use axum::routing::get;
-use socketioxide::SocketIo;
+use socketioxide::{
+    extract::{Data, SocketRef},
+    SocketIo,
+};
 use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::FmtSubscriber;
 
-use socketio::Server;
+use chat::handlers::chat_handler::ChatHandler;
+use chat::service::chat_service::ChatService;
+use database::dao::conversation_dao::ConversationDAO;
+use database::dao::message_dao::MessageDAO;
+use database::DB;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -21,8 +29,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         "DB_URI: {}",
         env::var("DB_URI").unwrap_or("Not set".to_string())
     );
-    // let db = train_messaging_server::init(&db_uri).await?;
-    let db_client = match data::DB::new(&db_uri).await {
+
+    let db_client = match DB::new(&db_uri).await {
         Ok(client) => client,
         Err(e) => {
             // Add logging
@@ -31,14 +39,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let db = db_client.get_database("test");
+    let conversation_dao = ConversationDAO::new(&db)?;
+    let message_dao = MessageDAO::new(&db)?;
+    let chat_service = Arc::new(ChatService::new(conversation_dao, message_dao));
 
     let (layer, io) = SocketIo::builder().with_state(db).build_layer();
 
-    let server = Arc::new(Server::new().await?);
-
-    io.ns("/", move |socket| async move {
-        let server = Arc::clone(&server);
-        server.on_connect(socket).await;
+    io.ns("/", move |socket: SocketRef| {
+        let chat_handler = ChatHandler::new(chat_service.clone());
+        socket.on(
+            "create-chat",
+            move |socket: SocketRef, data: Data<CreateConversation>| async move {
+                let chat_handler = chat_handler.clone();
+                chat_handler.handle_create_chat(socket, data).await;
+            },
+        );
     });
 
     let app = axum::Router::new()

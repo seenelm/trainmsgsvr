@@ -1,6 +1,7 @@
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 use socketioxide::extract::{Data, SocketRef, TryData};
+use socketioxide::handler::{FromMessageParts, MessageHandler};
 use std::sync::Arc;
 use tracing::info;
 
@@ -12,6 +13,9 @@ use crate::model::chat_model::{
     ConversationRequest, CreateConversation, CreateConversationResponse, MessageRequest,
 };
 use crate::service::chat_service::ChatService;
+
+use async_trait::async_trait;
+use socketioxide::adapter::LocalAdapter;
 
 // Message received from the client
 // #[derive(Debug, Deserialize)]
@@ -32,26 +36,20 @@ use crate::service::chat_service::ChatService;
 // }
 
 #[derive(Clone)]
-pub struct ChatHandler<'a> {
-    chat_service: &'a ChatService<ConversationDAO>,
-    message_dao: &'a MessageDAO,
-    socket: &'a SocketRef,
+pub struct ChatHandler {
+    chat_service: Arc<ChatService>,
 }
 
-impl<'a> ChatHandler<'a> {
-    pub fn new(
-        chat_service: &'a ChatService<ConversationDAO>,
-        message_dao: &'a MessageDAO,
-        socket: &'a SocketRef,
-    ) -> Self {
-        Self {
-            chat_service,
-            message_dao,
-            socket,
-        }
+impl ChatHandler {
+    pub fn new(chat_service: Arc<ChatService>) -> Self {
+        Self { chat_service }
     }
 
-    pub async fn handle_create_chat(&self, Data(data): Data<CreateConversation>) {
+    pub async fn handle_create_chat(
+        &self,
+        socket: SocketRef,
+        Data(data): Data<CreateConversation>,
+    ) {
         info!("Received create-chat: {:?}", data);
         // Insert new conversation into database
         let conversation_response = match self
@@ -87,10 +85,7 @@ impl<'a> ChatHandler<'a> {
             message_response,
         };
 
-        match self
-            .socket
-            .emit("create-chat", create_conversation_response)
-        {
+        match socket.emit("create-chat", create_conversation_response) {
             Ok(_) => info!("Successfully sent create-chat response"),
             Err(e) => println!("Failed to send create-chat response: {}", e),
         };
@@ -132,3 +127,26 @@ impl<'a> ChatHandler<'a> {
     //     }
     // }
 }
+
+// #[async_trait]
+// impl FromMessageParts<LocalAdapter> for ChatHandler {
+//     async fn from_message_parts(&self, data: Data<CreateConversation>) -> Result<(), ChatError> {
+//         self.handle_create_chat(data).await;
+//         Ok(())
+//     }
+// }
+
+// pub struct Server {
+//     chat_handler: ChatHandler,
+// }
+
+// impl Server {
+//     pub async fn new() -> Result<Self, mongodb::error::Error> {
+//         let conversation_dao = ConversationDAO::new();
+//         let message_dao = MessageDAO::new();
+//         let chat_service = ChatService::new(conversation_dao, message_dao);
+//         let socket = SocketRef::new();
+//         let chat_handler = ChatHandler::new(chat_service, socket);
+//         Ok(Self { chat_handler })
+//     }
+// }

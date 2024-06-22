@@ -2,24 +2,18 @@ use crate::error::{ApiResult, ChatError};
 use crate::model::chat_model::{
     ConversationRequest, ConversationResponse, MessageRequest, MessageResponse,
 };
-use database::dao::conversation_dao::Conversation;
+use database::dao::conversation_dao::{Conversation, ConversationDAO};
 use database::dao::message_dao::{Message, MessageDAO};
 use database::dao::BaseDAO;
 use mongodb::bson::oid::ObjectId;
 
-pub struct ChatService<D>
-where
-    D: BaseDAO<Conversation> + Send + Sync,
-{
-    conversation_dao: D,
+pub struct ChatService {
+    conversation_dao: ConversationDAO,
     message_dao: MessageDAO,
 }
 
-impl<D> ChatService<D>
-where
-    D: BaseDAO<Conversation> + Send + Sync,
-{
-    pub fn new(conversation_dao: D, message_dao: MessageDAO) -> Self {
+impl ChatService {
+    pub fn new(conversation_dao: ConversationDAO, message_dao: MessageDAO) -> Self {
         Self {
             conversation_dao,
             message_dao,
@@ -70,9 +64,9 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use database::dao::conversation_dao::MockConversationDAO;
-    use mongodb::bson::oid::ObjectId;
+    // use super::*;
+    // use database::dao::conversation_dao::MockConversationDAO;
+    // use mongodb::bson::oid::ObjectId;
 
     // #[tokio::test]
     // async fn test_insert_one() {
