@@ -28,10 +28,23 @@ impl MessageDAO {
         Ok(Self { collection })
     }
 
-    pub async fn insert_document(&self, document: &Message) -> Result<(), DataError> {
+    // pub async fn insert_document(&self, document: &Message) -> Result<(), DataError> {
+    //     println!("insert_document: {:?}", document);
+    //     self.collection.insert_one(document, None).await?;
+    //     Ok(())
+    // }
+    pub async fn insert_document(&self, document: &Message) -> Result<ObjectId, DataError> {
         println!("insert_document: {:?}", document);
-        self.collection.insert_one(document, None).await?;
-        Ok(())
+        let result = self.collection.insert_one(document, None).await;
+        match result {
+            Ok(insert_result) => match insert_result.inserted_id.as_object_id() {
+                Some(inserted_id) => Ok(inserted_id),
+                None => Err(DataError::InsertError(
+                    "Insert ID is not an ObjectId".to_string(),
+                )),
+            },
+            Err(e) => Err(DataError::QueryError(e)),
+        }
     }
 }
 

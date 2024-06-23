@@ -1,21 +1,11 @@
-use mongodb::bson::oid::ObjectId;
-use serde::{Deserialize, Serialize};
-use socketioxide::extract::{Data, SocketRef, TryData};
-use socketioxide::handler::{FromMessageParts, MessageHandler};
+use socketioxide::extract::{Data, SocketRef};
 use std::sync::Arc;
 use tracing::info;
 
-use database::dao::conversation_dao::ConversationDAO;
-use database::dao::message_dao::MessageDAO;
-
-use crate::error::ChatError;
 use crate::model::chat_model::{
-    ConversationRequest, CreateConversation, CreateConversationResponse, MessageRequest,
+    CreateConversation, CreateConversationResponse, InitMessageRequest, MessageRequest,
 };
 use crate::service::chat_service::ChatService;
-
-use async_trait::async_trait;
-use socketioxide::adapter::LocalAdapter;
 
 // Message received from the client
 // #[derive(Debug, Deserialize)]
@@ -64,12 +54,12 @@ impl ChatHandler {
             }
         };
 
-        let message_request = MessageRequest {
-            sender_id: data.message_request.sender_id,
-            conversation_id: conversation_response.id,
-            text: data.message_request.text,
-            created_at: data.message_request.created_at,
-        };
+        let message_request = MessageRequest::new(
+            data.init_message_request.sender_id,
+            conversation_response.id,
+            data.init_message_request.text,
+            data.init_message_request.created_at,
+        );
 
         // Insert new message into database
         let message_response = match self.chat_service.insert_message(message_request).await {

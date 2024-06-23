@@ -45,11 +45,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (layer, io) = SocketIo::builder().with_state(db).build_layer();
 
+    // io.ns("/", |socket: SocketRef| {
+    //     info!("Socket connected: {:?}", socket.id);
+    // });
+
     io.ns("/", move |socket: SocketRef| {
+        info!("Socket connected: {:?}", socket.id);
         let chat_handler = ChatHandler::new(chat_service.clone());
         socket.on(
             "create-chat",
             move |socket: SocketRef, data: Data<CreateConversation>| async move {
+                info!("Received create-chat");
                 let chat_handler = chat_handler.clone();
                 chat_handler.handle_create_chat(socket, data).await;
             },
@@ -66,9 +72,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let test_uri = env::var("TEST_URI").expect("TEST_URI must be set");
     let listener = tokio::net::TcpListener::bind(test_uri).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
-
     info!("Server running on port 3000");
+    axum::serve(listener, app).await.unwrap();
 
     Ok(())
 }

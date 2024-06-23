@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateConversation {
     pub conversation_request: ConversationRequest,
-    pub message_request: MessageRequest,
+    pub init_message_request: InitMessageRequest,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -71,11 +71,34 @@ impl TryFrom<ConversationRequest> for Conversation {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct InitMessageRequest {
+    pub sender_id: ObjectId,
+    pub text: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageRequest {
     pub sender_id: ObjectId,
     pub conversation_id: ObjectId,
     pub text: String,
     pub created_at: chrono::DateTime<chrono::Utc>,
+}
+
+impl MessageRequest {
+    pub fn new(
+        sender_id: ObjectId,
+        conversation_id: ObjectId,
+        text: String,
+        created_at: chrono::DateTime<chrono::Utc>,
+    ) -> Self {
+        Self {
+            sender_id,
+            conversation_id,
+            text,
+            created_at,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

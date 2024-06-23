@@ -4,8 +4,8 @@ use crate::model::chat_model::{
 };
 use database::dao::conversation_dao::{Conversation, ConversationDAO};
 use database::dao::message_dao::{Message, MessageDAO};
-use database::dao::BaseDAO;
-use mongodb::bson::oid::ObjectId;
+
+use tracing::info;
 
 pub struct ChatService {
     conversation_dao: ConversationDAO,
@@ -56,7 +56,8 @@ impl ChatService {
             }
         };
 
-        self.message_dao.insert_document(&message).await?;
+        let id = self.message_dao.insert_document(&message).await?;
+        info!("Inserted message with id: {:?}", id);
 
         Ok(MessageResponse { text: message.text })
     }
