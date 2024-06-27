@@ -41,10 +41,10 @@ pub struct ConversationResponse {
 }
 
 // Convert from ConversationRequest to Conversation
-impl TryFrom<ConversationRequest> for Conversation {
+impl TryFrom<&ConversationRequest> for Conversation {
     type Error = ChatError;
 
-    fn try_from(req: ConversationRequest) -> Result<Self, Self::Error> {
+    fn try_from(req: &ConversationRequest) -> Result<Self, Self::Error> {
         let conversation_name = match &req.name {
             Some(name) => name.to_owned(),
             None => {

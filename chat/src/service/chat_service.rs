@@ -2,7 +2,7 @@ use crate::error::{ApiResult, ChatError};
 use crate::model::chat_model::{
     ConversationRequest, ConversationResponse, MessageRequest, MessageResponse,
 };
-use database::dao::conversation_dao::{Conversation, ConversationDAO};
+use database::dao::conversation_dao::{Conversation, ConversationDAO, IConversationDAO};
 use database::dao::message_dao::{Message, MessageDAO};
 
 use tracing::info;
@@ -21,7 +21,9 @@ impl ChatService {
     }
 
     pub async fn create_chat(&self, data: ConversationRequest) -> ApiResult<ConversationResponse> {
-        let conversation = match Conversation::try_from(data) {
+        info!("Creat chat");
+
+        let conversation = match Conversation::try_from(&data) {
             Ok(conversation) => conversation,
             Err(e) => {
                 return Err(ChatError::BadRequest(format!(
@@ -30,6 +32,25 @@ impl ChatService {
                 )));
             }
         };
+
+        // Return ConflictError if conversation already exists.
+        if let Ok(_) = self
+            .conversation_dao
+            .find_one(&data.owner_id, &data.name.unwrap_or_default())
+            .await
+        {
+            println!("Conversation already exists");
+            return Err(ChatError::ConflictError(
+                "Conversation already exists".to_string(),
+            ));
+        }
+
+        // if let Ok(_) = existing_conversation {
+        //     info!("Conversation already exists");
+        //     return Err(ChatError::ConflictError(
+        //         "Conversation already exists".to_string(),
+        //     ));
+        // }
 
         let id = self.conversation_dao.insert_document(&conversation).await?;
 

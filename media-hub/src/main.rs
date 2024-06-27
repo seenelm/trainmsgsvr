@@ -1,5 +1,6 @@
-use chat::model::chat_model::CreateConversation;
+use chat::{handlers::chat_handler, model::chat_model::CreateConversation};
 use dotenv::dotenv;
+use mongodb::Database;
 use std::env;
 use std::sync::Arc;
 
@@ -17,7 +18,15 @@ use chat::handlers::chat_handler::ChatHandler;
 use chat::service::chat_service::ChatService;
 use database::dao::conversation_dao::ConversationDAO;
 use database::dao::message_dao::MessageDAO;
+use database::DataError;
 use database::DB;
+
+fn init_services(db: &Database) -> Result<ChatService, DataError> {
+    let conversation_dao = ConversationDAO::new(db)?;
+    let message_dao = MessageDAO::new(db)?;
+    let chat_service = ChatService::new(conversation_dao, message_dao);
+    Ok(chat_service)
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -44,10 +53,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let chat_service = Arc::new(ChatService::new(conversation_dao, message_dao));
 
     let (layer, io) = SocketIo::builder().with_state(db).build_layer();
-
-    // io.ns("/", |socket: SocketRef| {
-    //     info!("Socket connected: {:?}", socket.id);
-    // });
 
     io.ns("/", move |socket: SocketRef| {
         info!("Socket connected: {:?}", socket.id);

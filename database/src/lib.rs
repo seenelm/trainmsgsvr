@@ -11,6 +11,8 @@ pub enum DataError {
     QueryError(mongodb::error::Error),
     #[error("Insert error: {0}")]
     InsertError(String),
+    #[error("Not found error: {0}")]
+    NotFoundError(String),
 }
 
 pub struct DB {

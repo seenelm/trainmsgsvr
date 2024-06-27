@@ -11,4 +11,8 @@ pub enum ChatError {
     SocketEmitError(#[from] SendError),
     #[error("Error parsing request: {0}")]
     BadRequest(String),
+    #[error("Conflict error: {0}")]
+    ConflictError(String),
+    #[error("Not found error: {0}")]
+    NotFoundError(String),
 }

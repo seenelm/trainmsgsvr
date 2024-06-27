@@ -2,28 +2,8 @@ use socketioxide::extract::{Data, SocketRef};
 use std::sync::Arc;
 use tracing::info;
 
-use crate::model::chat_model::{
-    CreateConversation, CreateConversationResponse, InitMessageRequest, MessageRequest,
-};
+use crate::model::chat_model::{CreateConversation, CreateConversationResponse, MessageRequest};
 use crate::service::chat_service::ChatService;
-
-// Message received from the client
-// #[derive(Debug, Deserialize)]
-// pub struct Message {
-//     pub sender_id: ObjectId,
-//     pub conversation_id: ObjectId,
-//     pub text: String,
-//     pub media_url: Option<String>,
-//     pub created_at: chrono::DateTime<chrono::Utc>,
-// }
-
-// Message sent to the client
-// #[derive(Debug, Serialize)]
-// pub struct MessageOut {
-//     text: String,
-//     user: String,                        // user who sent the message
-//     date: chrono::DateTime<chrono::Utc>, // Timestamp for when the message was received
-// }
 
 #[derive(Clone)]
 pub struct ChatHandler {
