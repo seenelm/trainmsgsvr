@@ -51,9 +51,9 @@ impl IConversationDAO for ConversationDAO {
         }
     }
 
-    async fn find_one(&self, id: &ObjectId, name: &str) -> Result<Conversation, DataError> {
-        println!("id!!: {} name: {}", id, name);
-        let filter = doc! { "_id": id, "name": name };
+    async fn find_one(&self, owner_id: &ObjectId, name: &str) -> Result<Conversation, DataError> {
+        println!("id!!: {} name: {}", owner_id, name);
+        let filter = doc! { "owner_id": owner_id, "name": name };
         let result = self.collection.find_one(filter, None).await?;
 
         match result {
@@ -61,9 +61,12 @@ impl IConversationDAO for ConversationDAO {
                 println!("Conversation exists");
                 Ok(conversation)
             }
-            None => Err(DataError::NotFoundError(
-                "Conversation not found".to_string(),
-            )),
+            None => {
+                println!("Conversation does not exist");
+                return Err(DataError::NotFoundError(
+                    "Conversation not found".to_string(),
+                ));
+            }
         }
     }
 }
