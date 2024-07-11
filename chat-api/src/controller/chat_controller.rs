@@ -1,25 +1,27 @@
 use crate::error::ApiResult;
-use crate::model::chat_model::{ConversationRequest, ConversationResponse};
+use crate::model::chat_model::ConversationListResponse;
 use crate::service::chat_service::ChatService;
-use axum::{http::StatusCode, response::Json};
-use database::dao::conversation_dao::ConversationDAO;
+use axum::{extract::Path, http::StatusCode, response::Json};
+use mongodb::bson::oid::ObjectId;
 
-// pub struct ChatController {
-//     chat_service: ChatService<ConversationDAO>,
-// }
+use std::sync::Arc;
 
-// impl ChatController {
-//     pub fn new(chat_service: ChatService<ConversationDAO>) -> Self {
-//         Self { chat_service }
-//     }
+pub struct ChatController {
+    chat_service: ChatService,
+}
 
-//     pub async fn create_conversation(
-//         &self,
-//         Json(req): Json<ConversationRequest>,
-//     ) -> ApiResult<(StatusCode, Json<ConversationResponse>)> {
-//         match self.chat_service.insert_one(&req).await {
-//             Ok(conversation) => Ok((StatusCode::CREATED, Json(conversation))),
-//             Err(err) => Err(err),
-//         }
-//     }
-// }
+impl ChatController {
+    pub fn new(chat_service: ChatService) -> Self {
+        Self { chat_service }
+    }
+
+    pub async fn fetch_all_conversations(
+        &self,
+        Path(user_id): Path<ObjectId>,
+    ) -> ApiResult<(StatusCode, Json<ConversationListResponse>)> {
+        match self.chat_service.fetch_all(&user_id).await {
+            Ok(conversations) => Ok((StatusCode::ACCEPTED, Json(conversations))),
+            Err(err) => Err(err),
+        }
+    }
+}

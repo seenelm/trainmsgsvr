@@ -1,39 +1,22 @@
 use crate::error::{ApiError, ApiResult};
-use crate::model::chat_model::{ConversationRequest, ConversationResponse};
-use database::dao::conversation_dao::Conversation;
-use database::dao::BaseDAO;
+use crate::model::chat_model::ConversationListResponse;
+use database::dao::conversation_dao::{ConversationDAO, IConversationDAO};
 use mongodb::bson::oid::ObjectId;
 
 // use mockall::{automock, predicate::*};
 
-pub struct ChatService<D>
-where
-    D: BaseDAO<Conversation> + Send + Sync,
-{
-    conversation_dao: D,
+pub struct ChatService {
+    conversation_dao: ConversationDAO,
 }
 
-impl<D> ChatService<D>
-where
-    D: BaseDAO<Conversation> + Send + Sync,
-{
-    pub fn new(conversation_dao: D) -> Self {
+impl ChatService {
+    pub fn new(conversation_dao: ConversationDAO) -> Self {
         Self { conversation_dao }
     }
 
-    pub async fn insert_one(&self, data: &ConversationRequest) -> ApiResult<ConversationResponse> {
-        let conversation =
-            Conversation::try_from(data).map_err(|err| ApiError::BadRequest(err.to_string()))?;
-
-        let id = self.conversation_dao.insert_document(&conversation).await?;
-
-        Ok(ConversationResponse {
-            id,
-            name: conversation.name.unwrap_or_default(),
-            owner_id: conversation.owner_id,
-            members: conversation.members,
-            created_at: conversation.created_at,
-        })
+    pub async fn fetch_all(&self, user_id: &ObjectId) -> ApiResult<ConversationListResponse> {
+        let conversations = self.conversation_dao.find_all(&user_id).await?;
+        Ok(ConversationListResponse { conversations })
     }
 }
 

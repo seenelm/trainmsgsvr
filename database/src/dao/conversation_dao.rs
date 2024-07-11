@@ -6,6 +6,8 @@ use mongodb::bson::oid::ObjectId;
 use mongodb::{Collection, Database};
 use serde::{Deserialize, Serialize};
 
+use futures::stream::TryStreamExt;
+
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 
@@ -23,6 +25,7 @@ pub struct Conversation {
 pub trait IConversationDAO {
     async fn insert_document(&self, document: &Conversation) -> Result<ObjectId, DataError>;
     async fn find_one(&self, id: &ObjectId, name: &str) -> Result<Conversation, DataError>;
+    async fn find_all(&self, user_id: &ObjectId) -> Result<Vec<Conversation>, DataError>;
 }
 
 pub struct ConversationDAO {
@@ -68,5 +71,26 @@ impl IConversationDAO for ConversationDAO {
                 ));
             }
         }
+    }
+
+    async fn find_all(&self, user_id: &ObjectId) -> Result<Vec<Conversation>, DataError> {
+        let filter = doc! {
+            "or": [
+                { "owner_id": user_id },
+                { "members": { "$in": [user_id] } }
+            ]
+        };
+
+        let mut cursor = self.collection.find(filter, None).await?;
+        let mut conversations: Vec<Conversation> = Vec::new();
+
+        while let Ok(result) = cursor.try_next().await {
+            match result {
+                Some(conversation) => conversations.push(conversation),
+                None => break,
+            }
+        }
+
+        Ok(conversations)
     }
 }

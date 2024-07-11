@@ -7,7 +7,7 @@ pub mod dao;
 pub enum DataError {
     #[error("Database error: {0}")]
     Database(#[from] mongodb::error::Error),
-    #[error("Query error: {0}")]
+    #[error("Query error")]
     QueryError(mongodb::error::Error),
     #[error("Insert error: {0}")]
     InsertError(String),

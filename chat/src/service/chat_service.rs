@@ -45,13 +45,6 @@ impl ChatService {
             ));
         }
 
-        // if let Ok(_) = existing_conversation {
-        //     info!("Conversation already exists");
-        //     return Err(ChatError::ConflictError(
-        //         "Conversation already exists".to_string(),
-        //     ));
-        // }
-
         let id = self.conversation_dao.insert_document(&conversation).await?;
 
         Ok(ConversationResponse {

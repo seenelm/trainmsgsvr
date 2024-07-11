@@ -39,6 +39,7 @@ impl IntoResponse for ApiError {
                 DataError::Database(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
                 DataError::QueryError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err.to_string()),
                 DataError::InsertError(err) => (StatusCode::INTERNAL_SERVER_ERROR, err),
+                DataError::NotFoundError(err) => (StatusCode::NOT_FOUND, err),
             },
             ApiError::ResourceNotFound => (StatusCode::NOT_FOUND, "Resource not found".to_string()),
             ApiError::BadRequest(err) => (StatusCode::BAD_REQUEST, err),
