@@ -5,7 +5,7 @@ members = [
     "chat-api", 
     "media-hub", 
     "media-hub-api", 
-    "mock-chat-client",
+
 ]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
