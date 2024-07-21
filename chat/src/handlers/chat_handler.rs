@@ -4,6 +4,7 @@ use std::sync::Arc;
 use tracing::info;
 
 use crate::model::chat_model::{CreateConversation, CreateConversationResponse, MessageRequest};
+use crate::model::response::chat_response::NewMessageResponse;
 use crate::service::chat_service::ChatService;
 
 #[derive(Clone)]
@@ -75,55 +76,30 @@ impl ChatHandler {
         let _ = socket.join(room); // join the room
     }
 
-    // pub async fn handle_message(&self, Data(data): Data<Message>) {
-    //     info!("Message received: {:?}", data);
+    pub async fn handle_message(
+        &self,
+        socket: SocketRef,
+        Data(message_request): Data<MessageRequest>,
+    ) {
+        info!("Message received: {:?}", message_request);
 
-    //     let response = MessageOut {
-    //         text: data.text.clone(),
-    //         user: format!("anon-{}", socket.id),
-    //         date: chrono::Utc::now(),
-    //     };
-    //     info!("Message response: {:?}", response);
+        // Insert new message into database
+        let message_response = match self.chat_service.insert_message(message_request).await {
+            Ok(message) => message,
+            Err(e) => {
+                println!("Failed to insert message: {}", e);
+                return;
+            }
+        };
 
-    //     let message = Message {
-    //         id: None,
-    //         room: data.room.clone(),
-    //         message: data.text,
-    //     };
-
-    //     if let Err(e) = self.message_dao.insert_document(message).await {
-    //         println!("Failed to insert document: {}", e);
-    //         return;
-    //     }
-
-    //     // Send the message back to the room that it came from
-    //     // Send the message to all sockets that joined that room
-    //     if let Err(e) = socket.within(data.room).emit("message", response) {
-    //         println!("Failed to send message: {}", e);
-    //         return;
-    //     }
-    // }
+        // Send the message back to the room that it came from
+        // Send the message to all sockets that joined that room
+        if let Err(e) = socket
+            .within(message_response.conversation_id.to_string())
+            .emit("chat-message", message_response)
+        {
+            println!("Failed to send message: {}", e);
+            return;
+        }
+    }
 }
-
-// #[async_trait]
-// impl FromMessageParts<LocalAdapter> for ChatHandler {
-//     async fn from_message_parts(&self, data: Data<CreateConversation>) -> Result<(), ChatError> {
-//         self.handle_create_chat(data).await;
-//         Ok(())
-//     }
-// }
-
-// pub struct Server {
-//     chat_handler: ChatHandler,
-// }
-
-// impl Server {
-//     pub async fn new() -> Result<Self, mongodb::error::Error> {
-//         let conversation_dao = ConversationDAO::new();
-//         let message_dao = MessageDAO::new();
-//         let chat_service = ChatService::new(conversation_dao, message_dao);
-//         let socket = SocketRef::new();
-//         let chat_handler = ChatHandler::new(chat_service, socket);
-//         Ok(Self { chat_handler })
-//     }
-// }

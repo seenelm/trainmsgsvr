@@ -74,7 +74,12 @@ impl ChatService {
         let id = self.message_dao.insert_document(&message).await?;
         info!("Inserted message with id: {:?}", id);
 
-        Ok(MessageResponse { text: message.text })
+        Ok(MessageResponse {
+            sender_id: message.sender_id,
+            conversation_id: message.conversation_id,
+            text: message.text,
+            created_at: message.created_at,
+        })
     }
 }
 

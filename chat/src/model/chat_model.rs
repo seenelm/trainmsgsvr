@@ -103,7 +103,10 @@ impl MessageRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageResponse {
+    pub sender_id: ObjectId,
+    pub conversation_id: ObjectId,
     pub text: String,
+    pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
 impl TryFrom<MessageRequest> for Message {

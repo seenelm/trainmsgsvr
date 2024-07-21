@@ -1,6 +1,6 @@
 use chat::{
     handlers::chat_handler,
-    model::chat_model::{CreateConversation, User},
+    model::chat_model::{CreateConversation, MessageRequest},
 };
 use dotenv::dotenv;
 use mongodb::{bson::oid::ObjectId, Database};
@@ -74,7 +74,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let chat_handler = chat_handler.clone();
             move |socket: SocketRef, data: Data<CreateConversation>| async move {
                 info!("Received create-chat");
-
                 chat_handler.handle_create_chat(socket, data).await;
             }
         });
@@ -83,8 +82,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let chat_handler = chat_handler.clone();
             move |socket: SocketRef, data: Data<ObjectId>| async move {
                 info!("Received join-chat");
-
                 chat_handler.handle_join(socket, data).await;
+            }
+        });
+
+        socket.on("new-message", {
+            let chat_handler = chat_handler.clone();
+            move |socket: SocketRef, data: Data<MessageRequest>| async move {
+                info!("Received join-chat");
+                chat_handler.handle_message(socket, data).await;
             }
         });
     });
