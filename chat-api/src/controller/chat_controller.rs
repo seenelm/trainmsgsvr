@@ -1,10 +1,8 @@
 use crate::error::ApiResult;
-use crate::model::chat_model::ConversationListResponse;
+use crate::model::response::chat_response::ConversationListResponse;
 use crate::service::chat_service::ChatService;
 use axum::{extract::Path, http::StatusCode, response::Json};
 use mongodb::bson::oid::ObjectId;
-
-use std::sync::Arc;
 
 pub struct ChatController {
     chat_service: ChatService,

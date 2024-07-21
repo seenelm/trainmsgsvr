@@ -1,3 +1,4 @@
+use mongodb::bson::oid::ObjectId;
 use socketioxide::extract::{Data, SocketRef};
 use std::sync::Arc;
 use tracing::info;
@@ -51,22 +52,28 @@ impl ChatHandler {
         };
 
         let create_conversation_response = CreateConversationResponse {
-            conversation_response,
+            conversation_response: conversation_response.clone(),
             message_response,
         };
 
-        match socket.emit("create-chat", create_conversation_response) {
+        // Check if recpients are connected before sending the message
+        // Send message to all recipients
+
+        match socket
+            .within(conversation_response.members[0].to_string())
+            .emit("create-chat-response", create_conversation_response)
+        {
             Ok(_) => info!("Successfully sent create-chat response"),
             Err(e) => println!("Failed to send create-chat response: {}", e),
         };
     }
 
-    // pub async fn handle_join(&self, socket: SocketRef, Data(room): Data<String>) {
-    //     info!("Received join: {:?}", room);
-    //     let _ = socket.leave_all(); // leave all rooms to ensure the socket is only in one room
-    //     let _ = socket.join(room.clone()); // join the room
-    //                                        // let _ = self.message_dao.find_messages_by_room(&room).await;
-    // }
+    pub async fn handle_join(&self, socket: SocketRef, Data(conversation_id): Data<ObjectId>) {
+        let room = conversation_id.to_string();
+        info!("Joining room: {}", room);
+        let _ = socket.leave_all(); // leave all rooms to ensure the socket is only in one room
+        let _ = socket.join(room); // join the room
+    }
 
     // pub async fn handle_message(&self, Data(data): Data<Message>) {
     //     info!("Message received: {:?}", data);

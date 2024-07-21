@@ -1,6 +1,9 @@
-use chat::{handlers::chat_handler, model::chat_model::CreateConversation};
+use chat::{
+    handlers::chat_handler,
+    model::chat_model::{CreateConversation, User},
+};
 use dotenv::dotenv;
-use mongodb::Database;
+use mongodb::{bson::oid::ObjectId, Database};
 use std::env;
 use std::sync::Arc;
 
@@ -57,14 +60,33 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     io.ns("/", move |socket: SocketRef| {
         info!("Socket connected: {:?}", socket.id);
         let chat_handler = ChatHandler::new(chat_service.clone());
+
         socket.on(
-            "create-chat",
-            move |socket: SocketRef, data: Data<CreateConversation>| async move {
-                info!("Received create-chat");
-                let chat_handler = chat_handler.clone();
-                chat_handler.handle_create_chat(socket, data).await;
+            "join",
+            |socket: SocketRef, Data(user_id): Data<ObjectId>| {
+                info!("Received join");
+                let room = user_id.to_string();
+                _ = socket.join(room);
             },
         );
+
+        socket.on("create-chat", {
+            let chat_handler = chat_handler.clone();
+            move |socket: SocketRef, data: Data<CreateConversation>| async move {
+                info!("Received create-chat");
+
+                chat_handler.handle_create_chat(socket, data).await;
+            }
+        });
+
+        socket.on("join-chat", {
+            let chat_handler = chat_handler.clone();
+            move |socket: SocketRef, data: Data<ObjectId>| async move {
+                info!("Received join-chat");
+
+                chat_handler.handle_join(socket, data).await;
+            }
+        });
     });
 
     let app = axum::Router::new()

@@ -29,7 +29,7 @@ pub fn create_router(db: &Database) -> Router {
     let chat_controller = Arc::new(ChatController::new(chat_service));
 
     Router::new().route(
-        "/chat/api/:user_id/conversations",
+        "/chat/api/conversations/:user_id",
         get({
             let chat_controller = Arc::clone(&chat_controller);
             |user_id| async move { chat_controller.fetch_all_conversations(user_id).await }

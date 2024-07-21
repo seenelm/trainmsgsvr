@@ -34,6 +34,7 @@ impl ChatService {
         };
 
         // Return ConflictError if conversation already exists.
+        // If conersation already exists return existing conversation.
         if let Ok(_) = self
             .conversation_dao
             .find_one(&data.owner_id, &data.name.unwrap_or_default())

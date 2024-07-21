@@ -1,5 +1,5 @@
 use crate::error::{ApiError, ApiResult};
-use crate::model::chat_model::ConversationListResponse;
+use crate::model::response::chat_response::{ConversationListResponse, ConversationResponse};
 use database::dao::conversation_dao::{ConversationDAO, IConversationDAO};
 use mongodb::bson::oid::ObjectId;
 
@@ -16,7 +16,14 @@ impl ChatService {
 
     pub async fn fetch_all(&self, user_id: &ObjectId) -> ApiResult<ConversationListResponse> {
         let conversations = self.conversation_dao.find_all(&user_id).await?;
-        Ok(ConversationListResponse { conversations })
+        let conversation_response: Vec<ConversationResponse> = conversations
+            .into_iter()
+            .map(ConversationResponse::from)
+            .collect();
+
+        Ok(ConversationListResponse {
+            conversations: conversation_response,
+        })
     }
 }
 

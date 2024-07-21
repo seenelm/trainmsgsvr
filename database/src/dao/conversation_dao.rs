@@ -11,6 +11,7 @@ use futures::stream::TryStreamExt;
 #[cfg(test)]
 use mockall::{automock, predicate::*};
 
+// Make Conversation name a String.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Conversation {
     pub _id: ObjectId,
@@ -54,6 +55,7 @@ impl IConversationDAO for ConversationDAO {
         }
     }
 
+    // Find conversation by owner_id and members id.
     async fn find_one(&self, owner_id: &ObjectId, name: &str) -> Result<Conversation, DataError> {
         println!("id!!: {} name: {}", owner_id, name);
         let filter = doc! { "owner_id": owner_id, "name": name };
@@ -75,7 +77,7 @@ impl IConversationDAO for ConversationDAO {
 
     async fn find_all(&self, user_id: &ObjectId) -> Result<Vec<Conversation>, DataError> {
         let filter = doc! {
-            "or": [
+            "$or": [
                 { "owner_id": user_id },
                 { "members": { "$in": [user_id] } }
             ]
@@ -90,6 +92,7 @@ impl IConversationDAO for ConversationDAO {
                 None => break,
             }
         }
+        println!("conversations: {:?}", conversations);
 
         Ok(conversations)
     }
