@@ -21,6 +21,8 @@ impl ChatService {
             .map(ConversationResponse::from)
             .collect();
 
+        // println!("conversation_response: {:?}", conversation_response);
+
         Ok(ConversationListResponse {
             conversations: conversation_response,
         })

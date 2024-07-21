@@ -6,17 +6,22 @@ use mongodb::bson::oid::ObjectId;
 use mongodb::{Collection, Database};
 use serde::{Deserialize, Serialize};
 
+use crate::utils::serialize_object_id_vec_as_hex_string;
 use futures::stream::TryStreamExt;
+use mongodb::bson::serde_helpers::serialize_object_id_as_hex_string;
 
-#[cfg(test)]
-use mockall::{automock, predicate::*};
+// #[cfg(test)]
+// use mockall::{automock, predicate::*};
 
 // Make Conversation name a String.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Conversation {
+    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
     pub _id: ObjectId,
     pub name: Option<String>,
+    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
     pub owner_id: ObjectId,
+    #[serde(serialize_with = "serialize_object_id_vec_as_hex_string")]
     pub members: Vec<ObjectId>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -92,7 +97,8 @@ impl IConversationDAO for ConversationDAO {
                 None => break,
             }
         }
-        println!("conversations: {:?}", conversations);
+
+        println!("conversations 1: {:?}", conversations);
 
         Ok(conversations)
     }

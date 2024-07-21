@@ -18,7 +18,10 @@ impl ChatController {
         Path(user_id): Path<ObjectId>,
     ) -> ApiResult<(StatusCode, Json<ConversationListResponse>)> {
         match self.chat_service.fetch_all(&user_id).await {
-            Ok(conversations) => Ok((StatusCode::ACCEPTED, Json(conversations))),
+            Ok(conversations) => {
+                println!("conversations: {:?}", conversations);
+                Ok((StatusCode::ACCEPTED, Json(conversations)))
+            }
             Err(err) => Err(err),
         }
     }

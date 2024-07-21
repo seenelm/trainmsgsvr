@@ -2,6 +2,7 @@ use mongodb::{options::ClientOptions, Client};
 use thiserror::Error;
 
 pub mod dao;
+pub mod utils;
 
 #[derive(Debug, Error)]
 pub enum DataError {
