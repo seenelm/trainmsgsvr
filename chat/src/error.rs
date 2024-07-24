@@ -7,8 +7,8 @@ pub type ApiResult<T> = std::result::Result<T, ChatError>;
 pub enum ChatError {
     #[error("Database error: {0}")]
     Database(#[from] DataError),
-    #[error("Error sending message: {0}")]
-    SocketEmitError(#[from] SendError),
+    // #[error("Error sending message: {0}")]
+    // SocketEmitError(#[from] SendError),
     #[error("Error parsing request: {0}")]
     BadRequest(String),
     #[error("Conflict error: {0}")]

@@ -1,27 +1,18 @@
 use crate::DataError;
 
 use async_trait::async_trait;
+use futures::stream::TryStreamExt;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::{Collection, Database};
 use serde::{Deserialize, Serialize};
 
-use crate::utils::serialize_object_id_vec_as_hex_string;
-use futures::stream::TryStreamExt;
-use mongodb::bson::serde_helpers::serialize_object_id_as_hex_string;
-
-// #[cfg(test)]
-// use mockall::{automock, predicate::*};
-
 // Make Conversation name a String.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Conversation {
-    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
     pub _id: ObjectId,
     pub name: Option<String>,
-    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
     pub owner_id: ObjectId,
-    #[serde(serialize_with = "serialize_object_id_vec_as_hex_string")]
     pub members: Vec<ObjectId>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
@@ -48,6 +39,7 @@ impl ConversationDAO {
 #[async_trait]
 impl IConversationDAO for ConversationDAO {
     async fn insert_document(&self, document: &Conversation) -> Result<ObjectId, DataError> {
+        println!("Inserting document: {:?}", document);
         let result = self.collection.insert_one(document, None).await;
         match result {
             Ok(insert_result) => match insert_result.inserted_id.as_object_id() {

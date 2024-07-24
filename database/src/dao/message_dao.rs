@@ -1,11 +1,10 @@
 use crate::DataError;
 
+use futures::stream::TryStreamExt;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::{Collection, Database};
 use serde::{Deserialize, Serialize};
-
-use mockall::{automock, predicate::*};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Message {
@@ -28,11 +27,6 @@ impl MessageDAO {
         Ok(Self { collection })
     }
 
-    // pub async fn insert_document(&self, document: &Message) -> Result<(), DataError> {
-    //     println!("insert_document: {:?}", document);
-    //     self.collection.insert_one(document, None).await?;
-    //     Ok(())
-    // }
     pub async fn insert_document(&self, document: &Message) -> Result<ObjectId, DataError> {
         println!("insert_document: {:?}", document);
         let result = self.collection.insert_one(document, None).await;
@@ -46,41 +40,24 @@ impl MessageDAO {
             Err(e) => Err(DataError::QueryError(e)),
         }
     }
+
+    pub async fn find_all(&self, conversation_id: &ObjectId) -> Result<Vec<Message>, DataError> {
+        let filter = doc! {
+            "conversation_id": conversation_id
+        };
+
+        let mut cursor = self.collection.find(filter, None).await?;
+        let mut messages: Vec<Message> = Vec::new();
+
+        while let Ok(result) = cursor.try_next().await {
+            match result {
+                Some(message) => messages.push(message),
+                None => break,
+            }
+        }
+
+        println!("Messages 1: {:?}", messages);
+
+        Ok(messages)
+    }
 }
-
-// #[automock]
-// #[async_trait]
-// impl BaseDAO<Message> for MessageDAO {
-//     async fn insert_document(&self, document: &Message) -> Result<(), DataError> {
-//         println!("insert_document: {:?}", document);
-//         self.collection.insert_one(document, None).await?;
-//         Ok(())
-//     }
-// }
-
-// #[cfg(test)]
-// mod test {
-//     use super::*;
-
-//     #[tokio::test]
-//     async fn test_insert_message() {
-//         let mut message_dao = MockMessageDAO::new();
-
-//         let message = Message {
-//             id: None,
-//             sender_id: ObjectId::new(),
-//             conversation_id: ObjectId::new(),
-//             text: "Hello".to_string(),
-//             media_url: None,
-//             created_at: chrono::Utc::now(),
-//         };
-
-//         message_dao
-//             .expect_insert_document()
-//             .with(eq(message.clone()))
-//             .returning(|_| Ok(()));
-
-//         let result = message_dao.insert_document(&message).await;
-//         assert!(result.is_ok());
-//     }
-// }

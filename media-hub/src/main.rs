@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use axum::routing::get;
 use socketioxide::{
-    extract::{Data, SocketRef},
+    extract::{Data, SocketRef, TryData},
     SocketIo,
 };
 use tower::ServiceBuilder;
@@ -79,18 +79,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
 
         socket.on("join-chat", {
-            let chat_handler = chat_handler.clone();
-            move |socket: SocketRef, data: Data<ObjectId>| async move {
-                info!("Received join-chat");
-                chat_handler.handle_join(socket, data).await;
+            // println!("Join chat");
+            // let chat_handler = chat_handler.clone();
+            |socket: SocketRef, Data(conversation_id): Data<ObjectId>| {
+                let room = conversation_id.to_string();
+                info!("Joining room: {}", room);
+                let _ = socket.leave_all();
+                let _ = socket.join(room);
+                // chat_handler.handle_join(socket, data).await;
             }
         });
 
         socket.on("new-message", {
+            info!("New Message");
             let chat_handler = chat_handler.clone();
-            move |socket: SocketRef, data: Data<MessageRequest>| async move {
-                info!("Received join-chat");
-                chat_handler.handle_message(socket, data).await;
+            move |socket: SocketRef, data: TryData<MessageRequest>| async move {
+                info!("Received New Message");
+                match data.0 {
+                    Ok(message_request) => {
+                        chat_handler.handle_message(socket, message_request).await;
+                    }
+                    Err(e) => {
+                        println!("Failed to parse message request: {}", e);
+                    }
+                }
+                // chat_handler.handle_message(socket, data).await;
             }
         });
     });

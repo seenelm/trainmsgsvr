@@ -3,6 +3,7 @@ use database::dao::conversation_dao::Conversation;
 use database::dao::message_dao::Message;
 
 use mongodb::bson::oid::ObjectId;
+use mongodb::bson::serde_helpers::serialize_object_id_as_hex_string;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -103,7 +104,9 @@ impl MessageRequest {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageResponse {
+    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
     pub sender_id: ObjectId,
+    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
     pub conversation_id: ObjectId,
     pub text: String,
     pub created_at: chrono::DateTime<chrono::Utc>,

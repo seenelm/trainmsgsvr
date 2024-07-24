@@ -1,5 +1,5 @@
 use mongodb::bson::oid::ObjectId;
-use socketioxide::extract::{Data, SocketRef};
+use socketioxide::extract::{Data, SocketRef, TryData};
 use std::sync::Arc;
 use tracing::info;
 
@@ -70,17 +70,15 @@ impl ChatHandler {
     }
 
     pub async fn handle_join(&self, socket: SocketRef, Data(conversation_id): Data<ObjectId>) {
+        // Check if user is in conversation before joining.
+
         let room = conversation_id.to_string();
         info!("Joining room: {}", room);
         let _ = socket.leave_all(); // leave all rooms to ensure the socket is only in one room
         let _ = socket.join(room); // join the room
     }
 
-    pub async fn handle_message(
-        &self,
-        socket: SocketRef,
-        Data(message_request): Data<MessageRequest>,
-    ) {
+    pub async fn handle_message(&self, socket: SocketRef, message_request: MessageRequest) {
         info!("Message received: {:?}", message_request);
 
         // Insert new message into database

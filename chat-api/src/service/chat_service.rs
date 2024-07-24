@@ -1,17 +1,24 @@
 use crate::error::{ApiError, ApiResult};
-use crate::model::response::chat_response::{ConversationListResponse, ConversationResponse};
+use crate::model::response::chat_response::{
+    ConversationListResponse, ConversationResponse, MessageListResponse, MessageResponse,
+};
 use database::dao::conversation_dao::{ConversationDAO, IConversationDAO};
+use database::dao::message_dao::MessageDAO;
 use mongodb::bson::oid::ObjectId;
 
 // use mockall::{automock, predicate::*};
 
 pub struct ChatService {
     conversation_dao: ConversationDAO,
+    message_dao: MessageDAO,
 }
 
 impl ChatService {
-    pub fn new(conversation_dao: ConversationDAO) -> Self {
-        Self { conversation_dao }
+    pub fn new(conversation_dao: ConversationDAO, message_dao: MessageDAO) -> Self {
+        Self {
+            conversation_dao,
+            message_dao,
+        }
     }
 
     pub async fn fetch_all(&self, user_id: &ObjectId) -> ApiResult<ConversationListResponse> {
@@ -21,10 +28,21 @@ impl ChatService {
             .map(ConversationResponse::from)
             .collect();
 
-        // println!("conversation_response: {:?}", conversation_response);
-
         Ok(ConversationListResponse {
             conversations: conversation_response,
+        })
+    }
+
+    pub async fn fetch_all_messages(
+        &self,
+        conversation_id: &ObjectId,
+    ) -> ApiResult<MessageListResponse> {
+        let messages = self.message_dao.find_all(&conversation_id).await?;
+        let message_response: Vec<MessageResponse> =
+            messages.into_iter().map(MessageResponse::from).collect();
+
+        Ok(MessageListResponse {
+            messages: message_response,
         })
     }
 }
