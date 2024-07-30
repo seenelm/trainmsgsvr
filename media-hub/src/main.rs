@@ -1,6 +1,10 @@
+// use chat::{
+//     handlers::chat_handler,
+//     model::chat_model::{CreateConversation, MessageRequest},
+// };
 use chat::{
     handlers::chat_handler,
-    model::chat_model::{CreateConversation, MessageRequest},
+    model::request::chat_request::{CreateConversation, MessageRequest},
 };
 use dotenv::dotenv;
 use mongodb::{bson::oid::ObjectId, Database};

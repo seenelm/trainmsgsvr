@@ -1,8 +1,11 @@
 use crate::error::{ApiResult, ChatError};
-use crate::model::chat_model::{
-    ConversationRequest, ConversationResponse, MessageRequest, MessageResponse,
-};
-use database::dao::conversation_dao::{Conversation, ConversationDAO, IConversationDAO};
+// use crate::model::chat_model::{
+//     ConversationRequest, ConversationResponse, MessageRequest, MessageResponse,
+// };
+
+use crate::model::request::chat_request::{ConversationRequest, MessageRequest};
+use crate::model::response::chat_response::{ConversationResponse, MessageResponse, UserResponse};
+use database::dao::conversation_dao::{Conversation, ConversationDAO};
 use database::dao::message_dao::{Message, MessageDAO};
 
 use tracing::info;
@@ -21,9 +24,7 @@ impl ChatService {
     }
 
     pub async fn create_chat(&self, data: ConversationRequest) -> ApiResult<ConversationResponse> {
-        info!("Creat chat");
-
-        let conversation = match Conversation::try_from(&data) {
+        let mut conversation = match Conversation::try_from(&data) {
             Ok(conversation) => conversation,
             Err(e) => {
                 return Err(ChatError::BadRequest(format!(
@@ -32,6 +33,11 @@ impl ChatService {
                 )));
             }
         };
+
+        // Check if conversation is not a group conversation.
+        if conversation.members.len() == 1 {
+            conversation.name = Some("Peer to Peer".to_string());
+        }
 
         // Return ConflictError if conversation already exists.
         // If conersation already exists return existing conversation.
@@ -48,11 +54,18 @@ impl ChatService {
 
         let id = self.conversation_dao.insert_document(&conversation).await?;
 
+        let members: Vec<UserResponse> = conversation
+            .members
+            .iter()
+            .map(|user| UserResponse::from(user.clone()))
+            .collect();
+
         Ok(ConversationResponse {
             id,
             name: conversation.name.unwrap_or_default(),
             owner_id: conversation.owner_id,
-            members: conversation.members,
+            owner_name: conversation.owner_name,
+            members,
             created_at: conversation.created_at,
         })
     }

@@ -2,7 +2,7 @@ use crate::error::{ApiError, ApiResult};
 use crate::model::response::chat_response::{
     ConversationListResponse, ConversationResponse, MessageListResponse, MessageResponse,
 };
-use database::dao::conversation_dao::{ConversationDAO, IConversationDAO};
+use database::dao::conversation_dao::ConversationDAO;
 use database::dao::message_dao::MessageDAO;
 use mongodb::bson::oid::ObjectId;
 

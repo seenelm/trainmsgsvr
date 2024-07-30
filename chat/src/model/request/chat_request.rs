@@ -1,14 +1,23 @@
 use crate::error::ChatError;
-use database::dao::conversation_dao::Conversation;
+use database::dao::conversation_dao::{Conversation, User};
 use database::dao::message_dao::Message;
 
 use mongodb::bson::oid::ObjectId;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct User {
+pub struct UserRequest {
     pub id: ObjectId,
     pub name: String,
+}
+
+impl From<UserRequest> for User {
+    fn from(user_request: UserRequest) -> Self {
+        Self {
+            id: user_request.id,
+            name: user_request.name,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,7 +30,8 @@ pub struct CreateConversation {
 pub struct ConversationRequest {
     pub name: Option<String>,
     pub owner_id: ObjectId,
-    pub members: Vec<User>,
+    pub owner_name: String,
+    pub members: Vec<UserRequest>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
@@ -87,13 +97,20 @@ impl TryFrom<&ConversationRequest> for Conversation {
             }
         };
 
-        let member_ids: Vec<ObjectId> = req.members.iter().map(|user| user.id).collect();
+        // let member_ids: Vec<ObjectId> = req.members.iter().map(|user| user.id).collect();
+
+        let members: Vec<User> = req
+            .members
+            .iter()
+            .map(|user_request| User::from(user_request.clone()))
+            .collect();
 
         Ok(Self {
             _id: ObjectId::new(),
             name: Some(conversation_name),
             owner_id: req.owner_id,
-            members: member_ids,
+            owner_name: req.owner_name.clone(),
+            members,
             created_at: req.created_at,
             updated_at: None,
         })

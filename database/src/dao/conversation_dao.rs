@@ -7,22 +7,22 @@ use mongodb::bson::oid::ObjectId;
 use mongodb::{Collection, Database};
 use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+pub struct User {
+    pub id: ObjectId,
+    pub name: String,
+}
+
 // Make Conversation name a String.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct Conversation {
     pub _id: ObjectId,
     pub name: Option<String>,
     pub owner_id: ObjectId,
-    pub members: Vec<ObjectId>,
+    pub owner_name: String,
+    pub members: Vec<User>,
     pub created_at: chrono::DateTime<chrono::Utc>,
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
-}
-
-#[async_trait]
-pub trait IConversationDAO {
-    async fn insert_document(&self, document: &Conversation) -> Result<ObjectId, DataError>;
-    async fn find_one(&self, id: &ObjectId, name: &str) -> Result<Conversation, DataError>;
-    async fn find_all(&self, user_id: &ObjectId) -> Result<Vec<Conversation>, DataError>;
 }
 
 pub struct ConversationDAO {
@@ -36,10 +36,8 @@ impl ConversationDAO {
     }
 }
 
-#[async_trait]
-impl IConversationDAO for ConversationDAO {
-    async fn insert_document(&self, document: &Conversation) -> Result<ObjectId, DataError> {
-        println!("Inserting document: {:?}", document);
+impl ConversationDAO {
+    pub async fn insert_document(&self, document: &Conversation) -> Result<ObjectId, DataError> {
         let result = self.collection.insert_one(document, None).await;
         match result {
             Ok(insert_result) => match insert_result.inserted_id.as_object_id() {
@@ -53,8 +51,11 @@ impl IConversationDAO for ConversationDAO {
     }
 
     // Find conversation by owner_id and members id.
-    async fn find_one(&self, owner_id: &ObjectId, name: &str) -> Result<Conversation, DataError> {
-        println!("id!!: {} name: {}", owner_id, name);
+    pub async fn find_one(
+        &self,
+        owner_id: &ObjectId,
+        name: &str,
+    ) -> Result<Conversation, DataError> {
         let filter = doc! { "owner_id": owner_id, "name": name };
         let result = self.collection.find_one(filter, None).await?;
 
@@ -72,11 +73,11 @@ impl IConversationDAO for ConversationDAO {
         }
     }
 
-    async fn find_all(&self, user_id: &ObjectId) -> Result<Vec<Conversation>, DataError> {
+    pub async fn find_all(&self, user_id: &ObjectId) -> Result<Vec<Conversation>, DataError> {
         let filter = doc! {
             "$or": [
                 { "owner_id": user_id },
-                { "members": { "$in": [user_id] } }
+                { "members.id": user_id }
             ]
         };
 
@@ -85,7 +86,18 @@ impl IConversationDAO for ConversationDAO {
 
         while let Ok(result) = cursor.try_next().await {
             match result {
-                Some(conversation) => conversations.push(conversation),
+                Some(mut conversation) => {
+                    // Check if conversation is a group.
+                    if conversation.members.len() > 1 {
+                        conversations.push(conversation)
+                    } else {
+                        if conversation.owner_id == *user_id {
+                            conversation.name = Some(conversation.members[0].name.clone());
+                        } else {
+                            conversation.name = Some(conversation.owner_name);
+                        }
+                    }
+                }
                 None => break,
             }
         }
