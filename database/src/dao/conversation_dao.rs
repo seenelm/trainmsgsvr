@@ -87,15 +87,19 @@ impl ConversationDAO {
         while let Ok(result) = cursor.try_next().await {
             match result {
                 Some(mut conversation) => {
+                    println!("conversation: {:?}", conversation);
                     // Check if conversation is a group.
                     if conversation.members.len() > 1 {
                         conversations.push(conversation)
                     } else {
+                        println!("Not a group");
                         if conversation.owner_id == *user_id {
                             conversation.name = Some(conversation.members[0].name.clone());
                         } else {
-                            conversation.name = Some(conversation.owner_name);
+                            let owner_name = conversation.owner_name.clone();
+                            conversation.name = Some(owner_name);
                         }
+                        conversations.push(conversation);
                     }
                 }
                 None => break,
