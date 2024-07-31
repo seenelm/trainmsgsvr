@@ -39,19 +39,28 @@ impl ChatService {
             conversation.name = Some("Peer to Peer".to_string());
         }
 
-        // Return ConflictError if conversation already exists.
         // If conersation already exists return existing conversation.
-        if let Ok(_) = self
-            .conversation_dao
-            .find_one(&data.owner_id, &data.name.unwrap_or_default())
-            .await
+        if let Ok(Some(existing_conversation)) =
+            self.conversation_dao.find_one(&data.owner_id).await
         {
             println!("Conversation already exists");
-            return Err(ChatError::ConflictError(
-                "Conversation already exists".to_string(),
-            ));
+            let members: Vec<UserResponse> = existing_conversation
+                .members
+                .iter()
+                .map(|user| UserResponse::from(user.clone()))
+                .collect();
+
+            return Ok(ConversationResponse {
+                id: existing_conversation._id,
+                name: existing_conversation.name.unwrap_or_default(),
+                owner_id: existing_conversation.owner_id,
+                owner_name: existing_conversation.owner_name,
+                members,
+                created_at: existing_conversation.created_at,
+            });
         }
 
+        // Conversation doesn't exist
         let id = self.conversation_dao.insert_document(&conversation).await?;
 
         let members: Vec<UserResponse> = conversation

@@ -51,26 +51,28 @@ impl ConversationDAO {
     }
 
     // Find conversation by owner_id and members id.
-    pub async fn find_one(
-        &self,
-        owner_id: &ObjectId,
-        name: &str,
-    ) -> Result<Conversation, DataError> {
-        let filter = doc! { "owner_id": owner_id, "name": name };
+    pub async fn find_one(&self, owner_id: &ObjectId) -> Result<Option<Conversation>, DataError> {
+        // let filter = doc! { "owner_id": owner_id, "name": name };
+        let filter = doc! {
+            "$or": [
+                { "owner_id": owner_id },
+                { "members.id": owner_id }
+            ]
+        };
+
         let result = self.collection.find_one(filter, None).await?;
 
-        match result {
-            Some(conversation) => {
-                println!("Conversation exists");
-                Ok(conversation)
-            }
-            None => {
-                println!("Conversation does not exist");
-                return Err(DataError::NotFoundError(
-                    "Conversation not found".to_string(),
-                ));
-            }
-        }
+        Ok(result)
+
+        // match result {
+        //     Some(conversation) => {
+        //         println!("Conversation exists");
+        //         conversation
+        //     }
+        //     None => {
+        //         println!("Conversation does not exist");
+        //     }
+        // }
     }
 
     pub async fn find_all(&self, user_id: &ObjectId) -> Result<Vec<Conversation>, DataError> {
@@ -87,12 +89,10 @@ impl ConversationDAO {
         while let Ok(result) = cursor.try_next().await {
             match result {
                 Some(mut conversation) => {
-                    println!("conversation: {:?}", conversation);
                     // Check if conversation is a group.
                     if conversation.members.len() > 1 {
                         conversations.push(conversation)
                     } else {
-                        println!("Not a group");
                         if conversation.owner_id == *user_id {
                             conversation.name = Some(conversation.members[0].name.clone());
                         } else {
@@ -105,8 +105,6 @@ impl ConversationDAO {
                 None => break,
             }
         }
-
-        println!("conversations 1: {:?}", conversations);
 
         Ok(conversations)
     }
