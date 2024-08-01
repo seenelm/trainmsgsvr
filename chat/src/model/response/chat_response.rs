@@ -27,6 +27,7 @@ impl From<User> for UserResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConversationResponse {
+    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
     pub id: ObjectId,
     pub name: String,
     #[serde(serialize_with = "serialize_object_id_as_hex_string")]
@@ -38,7 +39,9 @@ pub struct ConversationResponse {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageResponse {
+    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
     pub sender_id: ObjectId,
+    #[serde(serialize_with = "serialize_object_id_as_hex_string")]
     pub conversation_id: ObjectId,
     pub text: String,
     pub created_at: chrono::DateTime<chrono::Utc>,

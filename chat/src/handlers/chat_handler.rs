@@ -72,12 +72,14 @@ impl ChatHandler {
             info!(" Owner Conversation Response: {:?}", conversation_response);
 
             match socket
-                .to(owner_id.to_string())
+                .within(owner_id.to_string())
                 .emit("create-chat-response", create_conversation_response)
             {
                 Ok(_) => info!("Successfully sent Owner create-chat response"),
                 Err(e) => println!("Failed to send create-chat response: {}", e),
             };
+
+            return;
         }
 
         if conversation_response.members[0].id == members[0].id {
