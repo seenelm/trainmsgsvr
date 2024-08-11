@@ -16,5 +16,6 @@ axum = "0.7"
 thiserror = "1.0.61"
 mockall = "0.12.1"
 database = { path = "../database" }
+common = { path = "../common" }
 reqwest = { version = "0.12.5", features = ["json"] }
 

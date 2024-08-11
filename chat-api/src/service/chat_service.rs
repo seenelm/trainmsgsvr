@@ -1,10 +1,12 @@
 use crate::error::{ApiError, ApiResult};
-use crate::model::response::chat_response::{
-    ConversationListResponse, ConversationResponse, MessageListResponse, MessageResponse,
-};
 use database::dao::conversation_dao::ConversationDAO;
 use database::dao::message_dao::MessageDAO;
 use mongodb::bson::oid::ObjectId;
+
+use common::conversation_request::FindConversationRequest;
+
+use common::conversation_response::{ConversationListResponse, ConversationResponse};
+use common::message_response::{MessageListResponse, MessageResponse};
 
 // use mockall::{automock, predicate::*};
 
@@ -21,7 +23,10 @@ impl ChatService {
         }
     }
 
-    pub async fn fetch_all(&self, user_id: &ObjectId) -> ApiResult<ConversationListResponse> {
+    pub async fn fetch_all_conversations(
+        &self,
+        user_id: &ObjectId,
+    ) -> ApiResult<ConversationListResponse> {
         let conversations = self.conversation_dao.find_all(&user_id).await?;
         let conversation_response: Vec<ConversationResponse> = conversations
             .into_iter()
@@ -31,6 +36,12 @@ impl ChatService {
         Ok(ConversationListResponse {
             conversations: conversation_response,
         })
+    }
+
+    pub async fn find_conversation_by_members(
+        &self,
+        find_conversation_request: FindConversationRequest,
+    ) {
     }
 
     pub async fn fetch_all_messages(

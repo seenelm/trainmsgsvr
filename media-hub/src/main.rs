@@ -1,11 +1,3 @@
-// use chat::{
-//     handlers::chat_handler,
-//     model::chat_model::{CreateConversation, MessageRequest},
-// };
-use chat::{
-    handlers::chat_handler,
-    model::request::chat_request::{CreateConversation, MessageRequest},
-};
 use dotenv::dotenv;
 use mongodb::{bson::oid::ObjectId, Database};
 use std::env;
@@ -20,6 +12,9 @@ use tower::ServiceBuilder;
 use tower_http::cors::CorsLayer;
 use tracing::info;
 use tracing_subscriber::FmtSubscriber;
+
+use common::conversation_request::CreateConversationRequest;
+use common::message_request::MessageRequest;
 
 use chat::handlers::chat_handler::ChatHandler;
 use chat::service::chat_service::ChatService;
@@ -76,7 +71,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         socket.on("create-chat", {
             let chat_handler = chat_handler.clone();
-            move |socket: SocketRef, data: Data<CreateConversation>| async move {
+            move |socket: SocketRef, data: Data<CreateConversationRequest>| async move {
                 info!("Received create-chat");
                 chat_handler.handle_create_chat(socket, data).await;
             }

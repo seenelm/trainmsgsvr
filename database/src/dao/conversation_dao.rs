@@ -1,29 +1,11 @@
 use crate::DataError;
 
+use crate::model::conversation::Conversation;
 use async_trait::async_trait;
 use futures::stream::TryStreamExt;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::{Collection, Database};
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-pub struct User {
-    pub id: ObjectId,
-    pub name: String,
-}
-
-// Make Conversation name a String.
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-pub struct Conversation {
-    pub _id: ObjectId,
-    pub name: Option<String>,
-    pub owner_id: ObjectId,
-    pub owner_name: String,
-    pub members: Vec<User>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-    pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
-}
 
 pub struct ConversationDAO {
     pub collection: Collection<Conversation>,
@@ -52,27 +34,16 @@ impl ConversationDAO {
 
     // Find conversation by owner_id and members id.
     pub async fn find_one(&self, owner_id: &ObjectId) -> Result<Option<Conversation>, DataError> {
-        // let filter = doc! { "owner_id": owner_id, "name": name };
         let filter = doc! {
             "$or": [
-                { "owner_id": owner_id },
-                { "members.id": owner_id }
+                { "owner.user.id": owner_id },
+                { "members.user.id": owner_id }
             ]
         };
 
         let result = self.collection.find_one(filter, None).await?;
 
         Ok(result)
-
-        // match result {
-        //     Some(conversation) => {
-        //         println!("Conversation exists");
-        //         conversation
-        //     }
-        //     None => {
-        //         println!("Conversation does not exist");
-        //     }
-        // }
     }
 
     pub async fn find_all(&self, user_id: &ObjectId) -> Result<Vec<Conversation>, DataError> {
@@ -93,11 +64,11 @@ impl ConversationDAO {
                     if conversation.members.len() > 1 {
                         conversations.push(conversation)
                     } else {
-                        if conversation.owner_id == *user_id {
-                            conversation.name = Some(conversation.members[0].name.clone());
+                        if conversation.owner.id == *user_id {
+                            conversation.name = conversation.members[0].name.clone();
                         } else {
-                            let owner_name = conversation.owner_name.clone();
-                            conversation.name = Some(owner_name);
+                            let owner_name = conversation.owner.name.clone();
+                            conversation.name = owner_name;
                         }
                         conversations.push(conversation);
                     }

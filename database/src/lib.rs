@@ -2,6 +2,7 @@ use mongodb::{options::ClientOptions, Client};
 use thiserror::Error;
 
 pub mod dao;
+pub mod model;
 pub mod utils;
 
 #[derive(Debug, Error)]

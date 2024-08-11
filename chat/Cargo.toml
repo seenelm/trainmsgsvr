@@ -15,4 +15,6 @@ chrono = { version = "0.4.31", features = ["serde"] }
 mongodb = "2.8.0"
 thiserror = "1.0.61"
 async-trait = "0.1.77"
+
 database = { path = "../database" }
+common = { path = "../common" }

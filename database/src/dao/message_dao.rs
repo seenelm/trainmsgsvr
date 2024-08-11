@@ -1,21 +1,10 @@
 use crate::DataError;
 
+use crate::model::message::Message;
 use futures::stream::TryStreamExt;
 use mongodb::bson::doc;
 use mongodb::bson::oid::ObjectId;
 use mongodb::{Collection, Database};
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
-pub struct Message {
-    #[serde(rename = "_id")]
-    pub id: ObjectId,
-    pub sender_id: ObjectId,
-    pub conversation_id: ObjectId,
-    pub text: String,
-    // pub media_url: Option<String>,
-    pub created_at: chrono::DateTime<chrono::Utc>,
-}
 
 pub struct MessageDAO {
     pub collection: Collection<Message>,

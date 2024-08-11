@@ -1,10 +1,12 @@
 [workspace]
+
 members = [
     "database",
     "chat",
     "chat-api", 
     "media-hub", 
     "media-hub-api", 
+    "common", 
 
 ]
 

@@ -1,12 +1,16 @@
 use crate::error::{ApiResult, ChatError};
-// use crate::model::chat_model::{
-//     ConversationRequest, ConversationResponse, MessageRequest, MessageResponse,
-// };
 
-use crate::model::request::chat_request::{ConversationRequest, MessageRequest};
-use crate::model::response::chat_response::{ConversationResponse, MessageResponse, UserResponse};
-use database::dao::conversation_dao::{Conversation, ConversationDAO};
-use database::dao::message_dao::{Message, MessageDAO};
+use database::dao::conversation_dao::ConversationDAO;
+use database::dao::message_dao::MessageDAO;
+use database::model::Conversation;
+use database::model::Message;
+
+use common::conversation_request::ConversationRequest;
+use common::message_request::MessageRequest;
+
+use common::conversation_response::ConversationResponse;
+use common::message_response::MessageResponse;
+use common::user_response::UserResponse;
 
 use tracing::info;
 
@@ -24,41 +28,33 @@ impl ChatService {
     }
 
     pub async fn create_chat(&self, data: ConversationRequest) -> ApiResult<ConversationResponse> {
-        let mut conversation = match Conversation::try_from(&data) {
-            Ok(conversation) => conversation,
-            Err(e) => {
-                return Err(ChatError::BadRequest(format!(
-                    "Failed to convert ConversationRequest to Conversation: {}",
-                    e
-                )));
-            }
-        };
+        let mut conversation = Conversation::from(&data);
 
         // Check if conversation is not a group conversation.
         if conversation.members.len() == 1 {
-            conversation.name = Some("Peer to Peer".to_string());
+            conversation.name = "Peer to Peer".to_string();
         }
 
         // If conersation already exists return existing conversation.
-        if let Ok(Some(existing_conversation)) =
-            self.conversation_dao.find_one(&data.owner_id).await
-        {
-            println!("Conversation already exists");
-            let members: Vec<UserResponse> = existing_conversation
-                .members
-                .iter()
-                .map(|user| UserResponse::from(user.clone()))
-                .collect();
+        // if let Ok(Some(existing_conversation)) =
+        //     self.conversation_dao.find_one(&data.owner.id).await
+        // {
+        //     println!("Conversation already exists");
+        //     let members: Vec<UserResponse> = existing_conversation
+        //         .members
+        //         .iter()
+        //         .map(|user| UserResponse::from(user.clone()))
+        //         .collect();
 
-            return Ok(ConversationResponse {
-                id: existing_conversation._id,
-                name: existing_conversation.name.unwrap_or_default(),
-                owner_id: existing_conversation.owner_id,
-                owner_name: existing_conversation.owner_name,
-                members,
-                created_at: existing_conversation.created_at,
-            });
-        }
+        //     return Ok(ConversationResponse {
+        //         id: existing_conversation._id,
+        //         name: existing_conversation.name,
+        //         owner_id: existing_conversation.owner.id,
+        //         owner_name: existing_conversation.owner.name,
+        //         members,
+        //         created_at: existing_conversation.created_at,
+        //     });
+        // }
 
         // Conversation doesn't exist
         let id = self.conversation_dao.insert_document(&conversation).await?;
@@ -71,11 +67,11 @@ impl ChatService {
 
         Ok(ConversationResponse {
             id,
-            name: conversation.name.unwrap_or_default(),
-            owner_id: conversation.owner_id,
-            owner_name: conversation.owner_name,
+            name: conversation.name,
+            owner: UserResponse::from(conversation.owner),
             members,
             created_at: conversation.created_at,
+            updated_at: None,
         })
     }
 
@@ -83,21 +79,13 @@ impl ChatService {
         &self,
         message_request: MessageRequest,
     ) -> ApiResult<MessageResponse> {
-        let message = match Message::try_from(message_request) {
-            Ok(message) => message,
-            Err(e) => {
-                return Err(ChatError::BadRequest(format!(
-                    "Failed to convert MessageRequest to Message: {}",
-                    e
-                )));
-            }
-        };
+        let message = Message::from(message_request);
 
         let id = self.message_dao.insert_document(&message).await?;
         info!("Inserted message with id: {:?}", id);
 
         Ok(MessageResponse {
-            sender_id: message.sender_id,
+            sender: UserResponse::from(message.sender),
             conversation_id: message.conversation_id,
             text: message.text,
             created_at: message.created_at,
