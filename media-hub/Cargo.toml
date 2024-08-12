@@ -1,27 +1,18 @@
-[workspace]
+[package]
+name = "media-hub"
+version = "0.1.0"
+edition = "2021"
 
-members = [
-    "database",
-    "chat",
-    "chat-api", 
-    "media-hub", 
-    "media-hub-api", 
-    "common", 
-
-]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[workspace.dependencies]
+[dependencies]
 axum = "0.7"
-socketioxide = { version = "0.10.0", features = ["state"] }
+socketioxide = { version = "0.14.0", features = ["state", "tracing"] }
 tokio = { version = "1", features = ["full"] }
 hyper = { version = "1.1.0", features = ["full"] }
 tower-http = { version = "0.5.1", features = ["cors"] }
 tower = "0.4.13"
 tracing = "0.1"
 tracing-subscriber = "0.3"
-serde = "1.0.195"
+serde = { version = "1.0.195", features = ["derive"] }
 serde_json = "1.0.111"
 chrono = { version = "0.4.31", features = ["serde"] }
 mongodb = "2.8.0"
@@ -29,3 +20,7 @@ dotenv = "0.15.0"
 async-trait = "0.1.77"
 futures = "0.3"
 thiserror = "1.0.61"
+
+chat = { path = "../chat" }
+database = { path = "../database" }
+common = { path = "../common" }
