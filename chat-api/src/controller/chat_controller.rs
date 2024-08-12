@@ -1,9 +1,13 @@
 use crate::error::ApiResult;
 use crate::service::chat_service::ChatService;
-use axum::{extract::Path, http::StatusCode, response::Json};
+use axum::{
+    extract::{Json, Path},
+    http::StatusCode,
+};
 use mongodb::bson::oid::ObjectId;
 
-use common::conversation_response::ConversationListResponse;
+use common::conversation_request::FindConversationRequest;
+use common::conversation_response::{ConversationListResponse, ConversationResponse};
 use common::message_response::MessageListResponse;
 
 pub struct ChatController {
@@ -36,6 +40,19 @@ impl ChatController {
             Ok(messages) => {
                 println!("messages: {:?}", messages);
                 Ok((StatusCode::ACCEPTED, Json(messages)))
+            }
+            Err(err) => Err(err),
+        }
+    }
+
+    pub async fn find_conversation(
+        &self,
+        Json(request): Json<FindConversationRequest>,
+    ) -> ApiResult<(StatusCode, Json<ConversationResponse>)> {
+        match self.chat_service.find_conversation(&request).await {
+            Ok(conversation) => {
+                println!("conversation: {:?}", conversation);
+                Ok((StatusCode::ACCEPTED, Json(conversation)))
             }
             Err(err) => Err(err),
         }

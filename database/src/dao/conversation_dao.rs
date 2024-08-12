@@ -33,11 +33,15 @@ impl ConversationDAO {
     }
 
     // Find conversation by owner_id and members id.
-    pub async fn find_one(&self, owner_id: &ObjectId) -> Result<Option<Conversation>, DataError> {
+    pub async fn find_one(
+        &self,
+        owner_id: &ObjectId,
+        members: &Vec<ObjectId>,
+    ) -> Result<Option<Conversation>, DataError> {
         let filter = doc! {
-            "$or": [
+            "$and": [
                 { "owner.user.id": owner_id },
-                { "members.user.id": owner_id }
+                { "members.user.id": { "$in": members }  }
             ]
         };
 

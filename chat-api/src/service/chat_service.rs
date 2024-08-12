@@ -7,6 +7,7 @@ use common::conversation_request::FindConversationRequest;
 
 use common::conversation_response::{ConversationListResponse, ConversationResponse};
 use common::message_response::{MessageListResponse, MessageResponse};
+use common::user_response::UserResponse;
 
 // use mockall::{automock, predicate::*};
 
@@ -38,10 +39,51 @@ impl ChatService {
         })
     }
 
-    pub async fn find_conversation_by_members(
+    pub async fn find_conversation(
         &self,
-        find_conversation_request: FindConversationRequest,
-    ) {
+        find_conversation_request: &FindConversationRequest,
+    ) -> ApiResult<ConversationResponse> {
+        // let existing_conversation = match self
+        //     .conversation_dao
+        //     .find_one(
+        //         &find_conversation_request.sender,
+        //         &find_conversation_request.members,
+        //     )
+        //     .await
+        // {
+        //     Ok(Some(conversation)) => Some(conversation),
+        //     Ok(None) => {
+        //         return Err(ApiError::ResourceNotFound);
+        //     }
+        //     Err(e) => {
+        //         println!("Error: {}", e);
+        //         None
+        //     }
+        // };
+
+        let existing_conversation = self
+            .conversation_dao
+            .find_one(
+                &find_conversation_request.sender,
+                &find_conversation_request.members,
+            )
+            .await?
+            .unwrap();
+
+        let members: Vec<UserResponse> = existing_conversation
+            .members
+            .iter()
+            .map(|user| UserResponse::from(user.clone()))
+            .collect();
+
+        return Ok(ConversationResponse {
+            id: existing_conversation._id,
+            name: existing_conversation.name,
+            owner: UserResponse::from(existing_conversation.owner.clone()),
+            members,
+            created_at: existing_conversation.created_at,
+            updated_at: existing_conversation.updated_at,
+        });
     }
 
     pub async fn fetch_all_messages(

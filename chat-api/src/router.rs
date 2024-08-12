@@ -1,6 +1,6 @@
 use axum::{routing::get, Router};
 use database::dao::conversation_dao::ConversationDAO;
-use database::dao::{message_dao, MessageDAO};
+use database::dao::MessageDAO;
 use mongodb::Database;
 
 use crate::controller::chat_controller::ChatController;
@@ -29,6 +29,17 @@ pub fn create_router(db: &Database) -> Router {
                 let chat_controller = Arc::clone(&chat_controller);
                 |conversation_id| async move {
                     chat_controller.fetch_all_messages(conversation_id).await
+                }
+            }),
+        )
+        .route(
+            "/chat/api/conversation",
+            get({
+                let chat_controller = Arc::clone(&chat_controller);
+                |find_conversation_request| async move {
+                    chat_controller
+                        .find_conversation(find_conversation_request)
+                        .await
                 }
             }),
         )

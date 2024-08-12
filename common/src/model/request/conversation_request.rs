@@ -18,10 +18,16 @@ pub struct ConversationRequest {
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct FindConversationRequest {
+//     pub sender: UserRequest,
+//     pub members: Vec<UserRequest>,
+// }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FindConversationRequest {
-    pub sender: UserRequest,
-    pub members: Vec<UserRequest>,
+    pub sender: ObjectId,
+    pub members: Vec<ObjectId>,
 }
 
 // Convert from ConversationRequest to Conversation
